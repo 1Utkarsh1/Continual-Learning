@@ -9,7 +9,7 @@ class ExperienceReplayLearner(BaselineLearner):
         self.replay_batch_size = replay_batch_size
         self.buffer = []
 
-    def train(self, train_loader, epochs=1, **kwargs):
+    def train(self, train_loader, val_loader=None, task_id=0, epochs=1, eval_freq=1, **kwargs):
         self.model.train()
         optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
         criterion = torch.nn.CrossEntropyLoss()

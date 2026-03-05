@@ -181,7 +181,11 @@ def run_continual_learning(args, logger):
     input_shape = task_data[0]['train_loader'].dataset[0][0].shape
     all_classes = set()
     for task in task_sequence:
-        all_classes.update(task['classes'])
+        if task['classes'] == 'all':
+            # 'all' is a sentinel meaning all classes in the dataset (e.g. 10 for MNIST variants)
+            all_classes.update(range(10))
+        else:
+            all_classes.update(task['classes'])
     num_classes = len(all_classes)
     
     model = get_model(args.model, input_shape, num_classes)
