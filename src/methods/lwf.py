@@ -10,7 +10,7 @@ class LwFLearner(BaselineLearner):
         self.alpha = alpha
         self.teacher_model = None  # Will hold a copy of the model from previous tasks
 
-    def train(self, train_loader, epochs=1, **kwargs):
+    def train(self, train_loader, val_loader=None, task_id=0, epochs=1, eval_freq=1, **kwargs):
         self.model.train()
         optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
         criterion_ce = torch.nn.CrossEntropyLoss()
@@ -29,10 +29,10 @@ class LwFLearner(BaselineLearner):
                     self.teacher_model.eval()
                     with torch.no_grad():
                         teacher_outputs = self.teacher_model(inputs)
-                    # Compute soft targets
-                    soft_teacher = F.log_softmax(teacher_outputs / T, dim=1)
-                    soft_outputs = F.softmax(outputs / T, dim=1)
-                    loss_kd = criterion_kd(soft_teacher, soft_outputs) * (T * T)
+                    # Compute soft targets: student uses log_softmax, teacher uses softmax
+                    soft_student = F.log_softmax(outputs / T, dim=1)
+                    soft_teacher = F.softmax(teacher_outputs / T, dim=1)
+                    loss_kd = criterion_kd(soft_student, soft_teacher) * (T * T)
                 loss = self.alpha * loss_ce + (1 - self.alpha) * loss_kd
                 loss.backward()
                 optimizer.step()
