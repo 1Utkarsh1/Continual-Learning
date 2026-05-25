@@ -1,245 +1,188 @@
-# 🧠 Continual Learning System
+# Continual Learning Benchmark
 
-<div align="center">
+[![CI](https://github.com/1Utkarsh1/Continual-Learning/actions/workflows/ci.yml/badge.svg)](https://github.com/1Utkarsh1/Continual-Learning/actions/workflows/ci.yml)
 
-![Python](https://img.shields.io/badge/Python-3.8%2B-blue)
-![PyTorch](https://img.shields.io/badge/PyTorch-2.0%2B-orange)
-![License](https://img.shields.io/badge/License-MIT-green)
-![Status](https://img.shields.io/badge/Status-Active-brightgreen)
+A PyTorch benchmark framework for comparing continual-learning strategies under
+the same task stream, metric suite, artifact pipeline, local MLflow tracker, and
+report generator.
 
-**A robust framework for training neural networks that can learn sequentially without forgetting**
+Experiments are config-driven, methods share a stable lifecycle interface, real
+and synthetic benchmarks use the same runner, and every run writes
+reproducibility artifacts that can be aggregated into leaderboard CSV/JSON files
+and plots. The primary reported result is a verified Split CIFAR-10 suite.
 
-[Overview](#overview) •
-[Key Features](#key-features) •
-[Techniques](#techniques) •
-[Installation](#installation) •
-[Usage](#usage) •
-[Results](#results) •
-[Contributing](#contributing)
+![Split CIFAR-10 headline benchmark leaderboard](docs/assets/split_cifar10_headline/leaderboard.png)
 
-</div>
+## Project Scope
 
-## 🔄 Overview
+- Config-driven benchmark runner for single runs and multi-method suites.
+- Implemented baseline fine-tuning, EWC, reservoir replay, LwF, DER++, and A-GEM.
+- Deterministic synthetic CI benchmark plus real MNIST and CIFAR-10 task streams.
+- Artifact tracking for config snapshots, metadata, JSONL events, CSV matrices,
+  checkpoints, MLflow runs, aggregate reports, and plots.
+- Python package, CLI, Dockerfile, Makefile, Ruff, pytest coverage, and GitHub
+  Actions matrix across Python 3.10, 3.11, and 3.12.
 
-The Continual Learning System is a comprehensive framework for developing neural networks that can learn tasks sequentially without suffering from catastrophic forgetting. This project implements several state-of-the-art techniques to mitigate forgetting in neural networks, allowing them to adapt to new tasks while retaining performance on previously learned ones.
-
-
-## 🌟 Key Features
-
-- **Task Sequential Learning**: Train models on a sequence of tasks without complete retraining
-- **Forgetting Mitigation**: Advanced techniques to prevent catastrophic forgetting
-- **Performance Tracking**: Comprehensive metrics to monitor how well knowledge is retained
-- **Experiment Framework**: Easily run and compare different continual learning approaches
-- **Visualization Tools**: Track and visualize forgetting metrics across sequential tasks
-
-## 🧩 Techniques Implemented
-
-### Elastic Weight Consolidation (EWC)
-
-EWC measures the importance of neural network weights for previously learned tasks and penalizes changes to important weights when learning new tasks.
-
-```python
-# Loss calculation with EWC
-loss = task_loss + lambda_ewc * ewc_loss
-```
-
-### Experience Replay
-
-This technique maintains a memory buffer of examples from previous tasks and periodically replays them during training on new tasks.
-
-```python
-# Replay during training
-combined_loss = current_task_loss + alpha * replay_loss
-```
-
-### Learning without Forgetting (LwF)
-
-LwF uses knowledge distillation to preserve the model's behavior on previous tasks when learning new ones.
-
-```python
-# LwF distillation loss
-distillation_loss = KL_divergence(current_outputs, previous_outputs)
-```
-
-### Task-specific Components
-
-For some approaches, we isolate or add task-specific parameters while sharing a common feature extraction backbone.
-
-## 🔧 Installation
+## Quickstart
 
 ```bash
-# Clone the repository
-git clone https://github.com/1Utkarsh1/continual-learning.git
-cd continual-learning
+git clone https://github.com/1Utkarsh1/Continual-Learning.git
+cd Continual-Learning
 
-# Create a virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -e ".[dev,experiment,report]"
 
-# Install dependencies
-pip install -r requirements.txt
+ruff check .
+ruff format --check .
+pytest --cov
+cl-bench run --config-name smoke --method baseline --epochs 1 --device cpu
 ```
 
-## 📊 Usage
-
-### Quick Start
+Or use the project automation:
 
 ```bash
-# Run baseline experiment (sequential training without any continual learning techniques)
-python src/main.py --method baseline --tasks mnist_split
-
-# Run EWC experiment
-python src/main.py --method ewc --tasks mnist_split --lambda_ewc 5000
-
-# Run Experience Replay experiment
-python src/main.py --method replay --tasks mnist_split --buffer_size 500
+make setup
+make verify
+make benchmark
 ```
 
-### Custom Task Sequences
+## CLI
 
-You can define your own task sequences in a YAML configuration file:
+Run one benchmark:
 
-```yaml
-# config/tasks/custom_sequence.yaml
-task_sequence:
-  - name: "mnist_digits_0_4"
-    dataset: "mnist"
-    classes: [0, 1, 2, 3, 4]
-  
-  - name: "mnist_digits_5_9"
-    dataset: "mnist"
-    classes: [5, 6, 7, 8, 9]
-  
-  - name: "fashion_mnist"
-    dataset: "fashion_mnist"
-    classes: "all"
+```bash
+cl-bench run --config-name smoke --method replay --epochs 1 --device cpu
 ```
 
-## 📈 Experimental Results
+Run the headline Split CIFAR-10 suite with local MLflow tracking and plots:
 
-### Comparison of Methods
-
-<div align="center">
-<table>
-  <tr>
-    <th>Method</th>
-    <th>Average Accuracy</th>
-    <th>Average Forgetting</th>
-    <th>Training Time</th>
-  </tr>
-  <tr>
-    <td>Naïve Fine-tuning</td>
-    <td>45.2%</td>
-    <td>35.8%</td>
-    <td>1.0x</td>
-  </tr>
-  <tr>
-    <td>EWC</td>
-    <td>78.5%</td>
-    <td>10.2%</td>
-    <td>1.2x</td>
-  </tr>
-  <tr>
-    <td>Experience Replay</td>
-    <td>82.3%</td>
-    <td>7.5%</td>
-    <td>1.5x</td>
-  </tr>
-  <tr>
-    <td>LwF</td>
-    <td>75.7%</td>
-    <td>12.8%</td>
-    <td>1.3x</td>
-  </tr>
-</table>
-</div>
-
-
-## 📝 Recent Experiment Results
-
-The following experiment results were obtained on March 11, 2025 using the MNIST split task sequence:
-
-**Baseline (Naïve Fine-tuning):**
-- Command: `python src/main.py --method baseline --tasks mnist_split --epochs 5`
-- Task sequence: ['mnist_0_4', 'mnist_5_9']
-- Average final accuracy: 49.74%
-- Average forgetting: 49.90%
-
-**Learning without Forgetting (LwF):**
-- Command: `python src/main.py --method lwf --tasks mnist_split --epochs 5`
-- Task sequence: ['mnist_0_4', 'mnist_5_9']
-- Average final accuracy: 49.67%
-- Average forgetting: 49.83%
-
-## 🛠️ Project Structure
-
-```
-continual_learning/
-├── src/                    # Source code
-│   ├── models/             # Neural network architectures
-│   ├── data/               # Data loading and preprocessing
-│   ├── methods/            # Continual learning algorithms
-│   ├── utils/              # Utility functions
-│   └── main.py             # Main entry point
-├── experiments/            # Jupyter notebooks for experiments
-├── config/                 # Configuration files
-│   ├── models/             # Model configurations
-│   └── tasks/              # Task sequence definitions
-├── results/                # Saved results and visualizations
-└── docs/                   # Documentation
+```bash
+cl-bench suite \
+  --config-name split_cifar10_headline \
+  --methods baseline ewc replay lwf derpp agem \
+  --seeds 13 21 \
+  --tracking both \
+  --report-dir docs/assets/split_cifar10_headline \
+  --title "Split CIFAR-10 Headline Benchmark"
 ```
 
-## 📝 Example Experiments
+Use Hydra/OmegaConf-style overrides for quick experiments:
 
-1. **Split MNIST**
-   - Train on digits 0-4, then 5-9
-   - Compare different methods' ability to remember the first task
+```bash
+cl-bench suite \
+  --config-name split_cifar10_headline \
+  --methods baseline derpp \
+  --seeds 13 \
+  --tracking json \
+  training.epochs=1 strategy.replay_buffer_size=500
+```
 
-2. **Task Incremental Learning**
-   - Train on MNIST → Fashion-MNIST → KMNIST
-   - Measure accuracy on all previous datasets after each task
+Inspect local experiment runs:
 
-3. **Class Incremental Learning**
-   - Add new classes (one at a time) to a classifier
-   - Test identification of all classes after each addition
+```bash
+mlflow ui --backend-store-uri sqlite:///mlruns/mlflow.db
+```
 
-## 🔮 Roadmap
+Aggregate existing run directories or MLflow artifact exports:
 
-- [x] Implement baseline sequential training
-- [x] Implement Elastic Weight Consolidation (EWC)
-- [x] Implement Experience Replay
-- [x] Implement Learning without Forgetting (LwF)
-- [x] Add support for generative replay
-- [x] Implement parameter isolation methods
-- [x] Add support for continual reinforcement learning
-- [x] Develop benchmark suite for comparing methods
+```bash
+cl-bench report \
+  --runs runs \
+  --output-dir reports/local \
+  --title "Local continual-learning report"
+```
 
-## 🤝 Contributing
+## Verified Headline Benchmark
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Local verification on 2026-05-25 used Python 3.11.15, PyTorch 2.12.0,
+torchvision 0.27.0, NumPy 2.4.6, Hydra 1.3.2, MLflow 3.12.0, Ruff 0.15.14,
+pytest 9.0.3, and Matplotlib 3.10.9.
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+Command:
 
-## 📚 References
+```bash
+cl-bench suite --config-name split_cifar10_headline --methods baseline ewc replay lwf derpp agem --seeds 13 21 --tracking both --report-dir docs/assets/split_cifar10_headline --title "Split CIFAR-10 Headline Benchmark"
+```
 
-1. Kirkpatrick, J. et al. "Overcoming catastrophic forgetting in neural networks" - *Proceedings of the National Academy of Sciences* (2017)
-2. Rebuffi, S. et al. "iCaRL: Incremental Classifier and Representation Learning" - *CVPR* (2017)
-3. Li, Z. and Hoiem, D. "Learning without Forgetting" - *IEEE Transactions on Pattern Analysis and Machine Intelligence* (2018)
-4. Chaudhry, A. et al. "Efficient Lifelong Learning with A-GEM" - *ICLR* (2019)
+The headline benchmark uses real CIFAR-10 images, five class-incremental tasks,
+2,500 training examples per task, 1,000 test examples per task, two seeds,
+5 epochs per task, a compact residual CIFAR ConvNet, and a 5,000-example replay
+memory budget where applicable. It is a reproducible benchmark, not a paper
+leaderboard claim.
 
-## 📄 License
+| Method | Average final accuracy | Average forgetting | Mean runtime |
+| --- | ---: | ---: | ---: |
+| DER++ | 51.15% +- 3.95% | 34.06% +- 4.74% | 578.7s |
+| replay | 41.99% +- 0.27% | 45.27% +- 1.73% | 547.4s |
+| LwF | 16.53% +- 0.13% | 76.71% +- 0.09% | 224.3s |
+| A-GEM | 14.37% +- 0.39% | 79.34% +- 0.96% | 516.3s |
+| baseline | 14.06% +- 0.10% | 79.14% +- 1.39% | 181.0s |
+| EWC | 12.12% +- 0.74% | 69.20% +- 3.02% | 223.1s |
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+Generated report artifacts live in
+[`docs/assets/split_cifar10_headline`](docs/assets/split_cifar10_headline/README.md).
 
----
+## Architecture
 
-<div align="center">
-    <b>Made with ❤️ by the Continual Learning Team</b><br>
-    <a href="https://github.com/1Utkarsh1">GitHub</a> •
-    <a href="#">Website</a> •
-    <a href="#">Contact</a>
-</div> 
+```text
+src/cl_bench/
+  cli.py             # run, suite, report, config discovery, and overrides
+  config.py          # TaskSpec, ExperimentConfig, BenchmarkResult
+  datasets.py        # synthetic, MNIST-family, and CIFAR-10 task construction
+  experiments.py     # seeded run orchestration and evaluation loop
+  metrics.py         # accuracy, forgetting, transfer, and summary metrics
+  models.py          # linear, MLP, small CNN, and CIFAR residual ConvNet factory
+  reporting.py       # run aggregation, leaderboard CSV/JSON, and plots
+  tracking.py        # JSON/JSONL/CSV artifacts and optional MLflow logging
+  strategies/        # baseline, EWC, replay, LwF, DER++, and A-GEM
+configs/
+  smoke.yaml              # fast deterministic CPU benchmark
+  split_mnist_quick.yaml  # bounded real MNIST suite for local CPU runs
+  split_mnist.yaml        # full five-task MNIST stream
+  split_cifar10_headline.yaml # verified CIFAR-10 benchmark used in the README
+docs/
+  BENCHMARK_CARD.md       # scope, metrics, limitations, reproducibility
+tests/                    # unit and integration coverage
+```
+
+## Run Artifacts
+
+Each run is written to `runs/<benchmark>_<method>_<timestamp>/` and contains:
+
+- `config.yaml`: exact config snapshot.
+- `run_metadata.json`: seed, device, and git commit when available.
+- `metrics.jsonl`: event-level training and evaluation metrics.
+- `metrics.json`: final run summary.
+- `accuracy_matrix.{json,csv}` and `forgetting_matrix.{json,csv}`.
+- Optional `checkpoints/final_model.pt`.
+- Optional MLflow run entries with params, metrics, tags, and artifacts.
+
+The report command writes:
+
+- `leaderboard.csv`
+- `summary.json`
+- `README.md`
+- `leaderboard.png`
+- `retention_curves.png`
+- `accuracy_matrices.png`
+
+Generated `data/`, `runs/`, `results/`, logs, checkpoints, and NumPy arrays are
+ignored by git. Curated README assets under `docs/assets/` are intentionally kept.
+
+## Engineering Notes
+
+- EWC estimates the empirical Fisher from per-sample log-likelihood gradients and
+  normalizes by the actual number of samples used.
+- Replay uses reservoir sampling so a bounded buffer represents the full observed
+  stream instead of only the newest examples.
+- LwF stores a frozen teacher after each task and combines supervised loss with
+  temperature-scaled KL distillation.
+- DER++ stores replay logits online and combines current CE, replay CE, and
+  logit-matching losses.
+- A-GEM projects conflicting gradients against replay-memory reference gradients.
+- Best validation checkpoints are deep-copied before restoration to avoid mutable
+  `state_dict` aliasing bugs.
+- The suite/report layer separates expensive benchmark execution from cheap,
+  repeatable analysis over saved metrics.

@@ -1,0 +1,38 @@
+name: split_mnist
+method: baseline
+seed: 42
+device: auto
+model: small_cnn
+data_dir: data
+output_dir: runs
+training:
+  epochs: 1
+  batch_size: 64
+  eval_batch_size: 256
+  learning_rate: 0.001
+  val_fraction: 0.1
+  num_workers: 2
+strategy:
+  ewc_lambda: 100.0
+  fisher_samples: 256
+  replay_buffer_size: 500
+  replay_batch_size: 64
+  replay_loss_weight: 1.0
+  lwf_alpha: 0.5
+  lwf_temperature: 2.0
+tasks:
+  - name: mnist_0_1
+    dataset: mnist
+    classes: [0, 1]
+  - name: mnist_2_3
+    dataset: mnist
+    classes: [2, 3]
+  - name: mnist_4_5
+    dataset: mnist
+    classes: [4, 5]
+  - name: mnist_6_7
+    dataset: mnist
+    classes: [6, 7]
+  - name: mnist_8_9
+    dataset: mnist
+    classes: [8, 9]

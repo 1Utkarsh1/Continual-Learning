@@ -1,0 +1,56 @@
+name: split_cifar10_headline
+method: derpp
+seed: 13
+device: auto
+model: cifar_convnet
+data_dir: data
+output_dir: runs
+tracking:
+  mode: both
+  mlflow_tracking_uri: sqlite:///mlruns/mlflow.db
+  mlflow_experiment: continual-learning-bench
+training:
+  epochs: 5
+  batch_size: 128
+  eval_batch_size: 512
+  learning_rate: 0.001
+  val_fraction: 0.1
+  num_workers: 0
+  augment: true
+strategy:
+  ewc_lambda: 50.0
+  fisher_samples: 256
+  replay_buffer_size: 5000
+  replay_batch_size: 256
+  replay_loss_weight: 3.0
+  lwf_alpha: 0.5
+  lwf_temperature: 2.0
+  derpp_alpha: 0.1
+  derpp_beta: 2.0
+  agem_memory_batch_size: 256
+tasks:
+  - name: cifar10_airplane_automobile
+    dataset: cifar10
+    classes: [0, 1]
+    train_limit: 2500
+    test_limit: 1000
+  - name: cifar10_bird_cat
+    dataset: cifar10
+    classes: [2, 3]
+    train_limit: 2500
+    test_limit: 1000
+  - name: cifar10_deer_dog
+    dataset: cifar10
+    classes: [4, 5]
+    train_limit: 2500
+    test_limit: 1000
+  - name: cifar10_frog_horse
+    dataset: cifar10
+    classes: [6, 7]
+    train_limit: 2500
+    test_limit: 1000
+  - name: cifar10_ship_truck
+    dataset: cifar10
+    classes: [8, 9]
+    train_limit: 2500
+    test_limit: 1000

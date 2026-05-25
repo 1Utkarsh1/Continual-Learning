@@ -1,0 +1,408 @@
+{
+  "benchmarks": [
+    "split_cifar10_headline"
+  ],
+  "generated_at_utc": "2026-05-25T14:20:17.367419+00:00",
+  "leaderboard": [
+    {
+      "average_final_accuracy_mean": 51.150000000000006,
+      "average_final_accuracy_std": 3.9499999999999993,
+      "average_forgetting_mean": 34.0625,
+      "average_forgetting_std": 4.737499999999999,
+      "average_learning_accuracy_mean": 78.39999999999999,
+      "backward_transfer_mean": -34.0625,
+      "method": "derpp",
+      "runs": 2,
+      "runtime_seconds_mean": 578.7151509795076,
+      "seeds": "13,21"
+    },
+    {
+      "average_final_accuracy_mean": 41.99000000000001,
+      "average_final_accuracy_std": 0.2699999999999996,
+      "average_forgetting_mean": 45.275,
+      "average_forgetting_std": 1.7250000000000014,
+      "average_learning_accuracy_mean": 78.21,
+      "backward_transfer_mean": -45.275,
+      "method": "replay",
+      "runs": 2,
+      "runtime_seconds_mean": 547.4045557500067,
+      "seeds": "13,21"
+    },
+    {
+      "average_final_accuracy_mean": 16.53,
+      "average_final_accuracy_std": 0.13000000000000078,
+      "average_forgetting_mean": 76.7125,
+      "average_forgetting_std": 0.08749999999999858,
+      "average_learning_accuracy_mean": 77.9,
+      "backward_transfer_mean": -76.7125,
+      "method": "lwf",
+      "runs": 2,
+      "runtime_seconds_mean": 224.33408429198607,
+      "seeds": "13,21"
+    },
+    {
+      "average_final_accuracy_mean": 14.370000000000001,
+      "average_final_accuracy_std": 0.39000000000000057,
+      "average_forgetting_mean": 79.3375,
+      "average_forgetting_std": 0.9624999999999986,
+      "average_learning_accuracy_mean": 77.84,
+      "backward_transfer_mean": -79.3375,
+      "method": "agem",
+      "runs": 2,
+      "runtime_seconds_mean": 516.2666623959958,
+      "seeds": "13,21"
+    },
+    {
+      "average_final_accuracy_mean": 14.059999999999999,
+      "average_final_accuracy_std": 0.10000000000000053,
+      "average_forgetting_mean": 79.13749999999999,
+      "average_forgetting_std": 1.3874999999999957,
+      "average_learning_accuracy_mean": 77.37,
+      "backward_transfer_mean": -79.13749999999999,
+      "method": "baseline",
+      "runs": 2,
+      "runtime_seconds_mean": 180.97890222900605,
+      "seeds": "13,21"
+    },
+    {
+      "average_final_accuracy_mean": 12.12,
+      "average_final_accuracy_std": 0.7400000000000002,
+      "average_forgetting_mean": 69.19999999999999,
+      "average_forgetting_std": 3.0249999999999986,
+      "average_learning_accuracy_mean": 67.48000000000002,
+      "backward_transfer_mean": -69.19999999999999,
+      "method": "ewc",
+      "runs": 2,
+      "runtime_seconds_mean": 223.06707881249895,
+      "seeds": "13,21"
+    }
+  ],
+  "num_runs": 12,
+  "runs": [
+    {
+      "benchmark": "split_cifar10_headline",
+      "git_commit": "972afde98a891a3c5aa25c8602b4e266fce07178",
+      "method": "agem",
+      "run_dir": "runs/split_cifar10_headline_agem_20260525T133221Z",
+      "runtime_seconds": 505.9784695839917,
+      "seed": 13,
+      "summary": {
+        "average_final_accuracy": 14.760000000000002,
+        "average_forgetting": 80.3,
+        "average_learning_accuracy": 79.0,
+        "backward_transfer": -80.3,
+        "model": "cifar_convnet",
+        "num_tasks": 5,
+        "replay_batch_size": 256,
+        "replay_buffer_size": 5000,
+        "runtime_seconds": 505.9784695839917,
+        "seed": 13
+      },
+      "task_names": [
+        "cifar10_airplane_automobile",
+        "cifar10_bird_cat",
+        "cifar10_deer_dog",
+        "cifar10_frog_horse",
+        "cifar10_ship_truck"
+      ]
+    },
+    {
+      "benchmark": "split_cifar10_headline",
+      "git_commit": "972afde98a891a3c5aa25c8602b4e266fce07178",
+      "method": "agem",
+      "run_dir": "runs/split_cifar10_headline_agem_20260525T141129Z",
+      "runtime_seconds": 526.5548552079999,
+      "seed": 21,
+      "summary": {
+        "average_final_accuracy": 13.98,
+        "average_forgetting": 78.375,
+        "average_learning_accuracy": 76.68,
+        "backward_transfer": -78.375,
+        "model": "cifar_convnet",
+        "num_tasks": 5,
+        "replay_batch_size": 256,
+        "replay_buffer_size": 5000,
+        "runtime_seconds": 526.5548552079999,
+        "seed": 21
+      },
+      "task_names": [
+        "cifar10_airplane_automobile",
+        "cifar10_bird_cat",
+        "cifar10_deer_dog",
+        "cifar10_frog_horse",
+        "cifar10_ship_truck"
+      ]
+    },
+    {
+      "benchmark": "split_cifar10_headline",
+      "git_commit": "972afde98a891a3c5aa25c8602b4e266fce07178",
+      "method": "baseline",
+      "run_dir": "runs/split_cifar10_headline_baseline_20260525T130248Z",
+      "runtime_seconds": 175.88738362499862,
+      "seed": 13,
+      "summary": {
+        "average_final_accuracy": 14.16,
+        "average_forgetting": 77.75,
+        "average_learning_accuracy": 76.36,
+        "backward_transfer": -77.75,
+        "model": "cifar_convnet",
+        "num_tasks": 5,
+        "replay_batch_size": 256,
+        "replay_buffer_size": 5000,
+        "runtime_seconds": 175.88738362499862,
+        "seed": 13
+      },
+      "task_names": [
+        "cifar10_airplane_automobile",
+        "cifar10_bird_cat",
+        "cifar10_deer_dog",
+        "cifar10_frog_horse",
+        "cifar10_ship_truck"
+      ]
+    },
+    {
+      "benchmark": "split_cifar10_headline",
+      "git_commit": "972afde98a891a3c5aa25c8602b4e266fce07178",
+      "method": "baseline",
+      "run_dir": "runs/split_cifar10_headline_baseline_20260525T134059Z",
+      "runtime_seconds": 186.0704208330135,
+      "seed": 21,
+      "summary": {
+        "average_final_accuracy": 13.959999999999999,
+        "average_forgetting": 80.52499999999999,
+        "average_learning_accuracy": 78.38,
+        "backward_transfer": -80.52499999999999,
+        "model": "cifar_convnet",
+        "num_tasks": 5,
+        "replay_batch_size": 256,
+        "replay_buffer_size": 5000,
+        "runtime_seconds": 186.0704208330135,
+        "seed": 21
+      },
+      "task_names": [
+        "cifar10_airplane_automobile",
+        "cifar10_bird_cat",
+        "cifar10_deer_dog",
+        "cifar10_frog_horse",
+        "cifar10_ship_truck"
+      ]
+    },
+    {
+      "benchmark": "split_cifar10_headline",
+      "git_commit": "972afde98a891a3c5aa25c8602b4e266fce07178",
+      "method": "derpp",
+      "run_dir": "runs/split_cifar10_headline_derpp_20260525T132220Z",
+      "runtime_seconds": 592.4993861670082,
+      "seed": 13,
+      "summary": {
+        "average_final_accuracy": 55.1,
+        "average_forgetting": 29.325,
+        "average_learning_accuracy": 78.55999999999999,
+        "backward_transfer": -29.325,
+        "model": "cifar_convnet",
+        "num_tasks": 5,
+        "replay_batch_size": 256,
+        "replay_buffer_size": 5000,
+        "runtime_seconds": 592.4993861670082,
+        "seed": 13
+      },
+      "task_names": [
+        "cifar10_airplane_automobile",
+        "cifar10_bird_cat",
+        "cifar10_deer_dog",
+        "cifar10_frog_horse",
+        "cifar10_ship_truck"
+      ]
+    },
+    {
+      "benchmark": "split_cifar10_headline",
+      "git_commit": "972afde98a891a3c5aa25c8602b4e266fce07178",
+      "method": "derpp",
+      "run_dir": "runs/split_cifar10_headline_derpp_20260525T140155Z",
+      "runtime_seconds": 564.930915792007,
+      "seed": 21,
+      "summary": {
+        "average_final_accuracy": 47.2,
+        "average_forgetting": 38.8,
+        "average_learning_accuracy": 78.24,
+        "backward_transfer": -38.8,
+        "model": "cifar_convnet",
+        "num_tasks": 5,
+        "replay_batch_size": 256,
+        "replay_buffer_size": 5000,
+        "runtime_seconds": 564.930915792007,
+        "seed": 21
+      },
+      "task_names": [
+        "cifar10_airplane_automobile",
+        "cifar10_bird_cat",
+        "cifar10_deer_dog",
+        "cifar10_frog_horse",
+        "cifar10_ship_truck"
+      ]
+    },
+    {
+      "benchmark": "split_cifar10_headline",
+      "git_commit": "972afde98a891a3c5aa25c8602b4e266fce07178",
+      "method": "ewc",
+      "run_dir": "runs/split_cifar10_headline_ewc_20260525T130553Z",
+      "runtime_seconds": 231.59013450000202,
+      "seed": 13,
+      "summary": {
+        "average_final_accuracy": 12.86,
+        "average_forgetting": 72.225,
+        "average_learning_accuracy": 70.64000000000001,
+        "backward_transfer": -72.225,
+        "model": "cifar_convnet",
+        "num_tasks": 5,
+        "replay_batch_size": 256,
+        "replay_buffer_size": 5000,
+        "runtime_seconds": 231.59013450000202,
+        "seed": 13
+      },
+      "task_names": [
+        "cifar10_airplane_automobile",
+        "cifar10_bird_cat",
+        "cifar10_deer_dog",
+        "cifar10_frog_horse",
+        "cifar10_ship_truck"
+      ]
+    },
+    {
+      "benchmark": "split_cifar10_headline",
+      "git_commit": "972afde98a891a3c5aa25c8602b4e266fce07178",
+      "method": "ewc",
+      "run_dir": "runs/split_cifar10_headline_ewc_20260525T134413Z",
+      "runtime_seconds": 214.54402312499587,
+      "seed": 21,
+      "summary": {
+        "average_final_accuracy": 11.379999999999999,
+        "average_forgetting": 66.175,
+        "average_learning_accuracy": 64.32000000000001,
+        "backward_transfer": -66.175,
+        "model": "cifar_convnet",
+        "num_tasks": 5,
+        "replay_batch_size": 256,
+        "replay_buffer_size": 5000,
+        "runtime_seconds": 214.54402312499587,
+        "seed": 21
+      },
+      "task_names": [
+        "cifar10_airplane_automobile",
+        "cifar10_bird_cat",
+        "cifar10_deer_dog",
+        "cifar10_frog_horse",
+        "cifar10_ship_truck"
+      ]
+    },
+    {
+      "benchmark": "split_cifar10_headline",
+      "git_commit": "972afde98a891a3c5aa25c8602b4e266fce07178",
+      "method": "lwf",
+      "run_dir": "runs/split_cifar10_headline_lwf_20260525T131842Z",
+      "runtime_seconds": 210.86184020899236,
+      "seed": 13,
+      "summary": {
+        "average_final_accuracy": 16.4,
+        "average_forgetting": 76.625,
+        "average_learning_accuracy": 77.7,
+        "backward_transfer": -76.625,
+        "model": "cifar_convnet",
+        "num_tasks": 5,
+        "replay_batch_size": 256,
+        "replay_buffer_size": 5000,
+        "runtime_seconds": 210.86184020899236,
+        "seed": 13
+      },
+      "task_names": [
+        "cifar10_airplane_automobile",
+        "cifar10_bird_cat",
+        "cifar10_deer_dog",
+        "cifar10_frog_horse",
+        "cifar10_ship_truck"
+      ]
+    },
+    {
+      "benchmark": "split_cifar10_headline",
+      "git_commit": "972afde98a891a3c5aa25c8602b4e266fce07178",
+      "method": "lwf",
+      "run_dir": "runs/split_cifar10_headline_lwf_20260525T135744Z",
+      "runtime_seconds": 237.80632837497978,
+      "seed": 21,
+      "summary": {
+        "average_final_accuracy": 16.66,
+        "average_forgetting": 76.8,
+        "average_learning_accuracy": 78.1,
+        "backward_transfer": -76.8,
+        "model": "cifar_convnet",
+        "num_tasks": 5,
+        "replay_batch_size": 256,
+        "replay_buffer_size": 5000,
+        "runtime_seconds": 237.80632837497978,
+        "seed": 21
+      },
+      "task_names": [
+        "cifar10_airplane_automobile",
+        "cifar10_bird_cat",
+        "cifar10_deer_dog",
+        "cifar10_frog_horse",
+        "cifar10_ship_truck"
+      ]
+    },
+    {
+      "benchmark": "split_cifar10_headline",
+      "git_commit": "972afde98a891a3c5aa25c8602b4e266fce07178",
+      "method": "replay",
+      "run_dir": "runs/split_cifar10_headline_replay_20260525T130954Z",
+      "runtime_seconds": 519.1472583750146,
+      "seed": 13,
+      "summary": {
+        "average_final_accuracy": 42.260000000000005,
+        "average_forgetting": 43.55,
+        "average_learning_accuracy": 77.1,
+        "backward_transfer": -43.55,
+        "model": "cifar_convnet",
+        "num_tasks": 5,
+        "replay_batch_size": 256,
+        "replay_buffer_size": 5000,
+        "runtime_seconds": 519.1472583750146,
+        "seed": 13
+      },
+      "task_names": [
+        "cifar10_airplane_automobile",
+        "cifar10_bird_cat",
+        "cifar10_deer_dog",
+        "cifar10_frog_horse",
+        "cifar10_ship_truck"
+      ]
+    },
+    {
+      "benchmark": "split_cifar10_headline",
+      "git_commit": "972afde98a891a3c5aa25c8602b4e266fce07178",
+      "method": "replay",
+      "run_dir": "runs/split_cifar10_headline_replay_20260525T134756Z",
+      "runtime_seconds": 575.6618531249987,
+      "seed": 21,
+      "summary": {
+        "average_final_accuracy": 41.720000000000006,
+        "average_forgetting": 47.0,
+        "average_learning_accuracy": 79.32,
+        "backward_transfer": -47.0,
+        "model": "cifar_convnet",
+        "num_tasks": 5,
+        "replay_batch_size": 256,
+        "replay_buffer_size": 5000,
+        "runtime_seconds": 575.6618531249987,
+        "seed": 21
+      },
+      "task_names": [
+        "cifar10_airplane_automobile",
+        "cifar10_bird_cat",
+        "cifar10_deer_dog",
+        "cifar10_frog_horse",
+        "cifar10_ship_truck"
+      ]
+    }
+  ],
+  "title": "Split CIFAR-10 Headline Benchmark"
+}
