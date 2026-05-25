@@ -2,8 +2,21 @@
   "benchmarks": [
     "split_cifar10_headline"
   ],
-  "generated_at_utc": "2026-05-25T14:20:17.367419+00:00",
+  "generated_at_utc": "2026-05-25T17:12:39.893738+00:00",
   "leaderboard": [
+    {
+      "average_final_accuracy_mean": 68.78,
+      "average_final_accuracy_std": 0.21999999999999886,
+      "average_forgetting_mean": 12.8875,
+      "average_forgetting_std": 0.7125000000000012,
+      "average_learning_accuracy_mean": 78.32,
+      "backward_transfer_mean": -11.925,
+      "memory_budget_mean": 10000.0,
+      "method": "gdumb",
+      "runs": 2,
+      "runtime_seconds_mean": 2020.4386042919941,
+      "seeds": "13,21"
+    },
     {
       "average_final_accuracy_mean": 51.150000000000006,
       "average_final_accuracy_std": 3.9499999999999993,
@@ -11,6 +24,7 @@
       "average_forgetting_std": 4.737499999999999,
       "average_learning_accuracy_mean": 78.39999999999999,
       "backward_transfer_mean": -34.0625,
+      "memory_budget_mean": 5000.0,
       "method": "derpp",
       "runs": 2,
       "runtime_seconds_mean": 578.7151509795076,
@@ -23,6 +37,7 @@
       "average_forgetting_std": 1.7250000000000014,
       "average_learning_accuracy_mean": 78.21,
       "backward_transfer_mean": -45.275,
+      "memory_budget_mean": 5000.0,
       "method": "replay",
       "runs": 2,
       "runtime_seconds_mean": 547.4045557500067,
@@ -35,6 +50,7 @@
       "average_forgetting_std": 0.08749999999999858,
       "average_learning_accuracy_mean": 77.9,
       "backward_transfer_mean": -76.7125,
+      "memory_budget_mean": 5000.0,
       "method": "lwf",
       "runs": 2,
       "runtime_seconds_mean": 224.33408429198607,
@@ -47,6 +63,7 @@
       "average_forgetting_std": 0.9624999999999986,
       "average_learning_accuracy_mean": 77.84,
       "backward_transfer_mean": -79.3375,
+      "memory_budget_mean": 5000.0,
       "method": "agem",
       "runs": 2,
       "runtime_seconds_mean": 516.2666623959958,
@@ -59,6 +76,7 @@
       "average_forgetting_std": 1.3874999999999957,
       "average_learning_accuracy_mean": 77.37,
       "backward_transfer_mean": -79.13749999999999,
+      "memory_budget_mean": 5000.0,
       "method": "baseline",
       "runs": 2,
       "runtime_seconds_mean": 180.97890222900605,
@@ -71,13 +89,14 @@
       "average_forgetting_std": 3.0249999999999986,
       "average_learning_accuracy_mean": 67.48000000000002,
       "backward_transfer_mean": -69.19999999999999,
+      "memory_budget_mean": 5000.0,
       "method": "ewc",
       "runs": 2,
       "runtime_seconds_mean": 223.06707881249895,
       "seeds": "13,21"
     }
   ],
-  "num_runs": 12,
+  "num_runs": 14,
   "runs": [
     {
       "benchmark": "split_cifar10_headline",
@@ -297,6 +316,62 @@
     },
     {
       "benchmark": "split_cifar10_headline",
+      "git_commit": "eea83cbce1406e91f4c2929c8467b70506f28e4a",
+      "method": "gdumb",
+      "run_dir": "runs/split_cifar10_headline_gdumb_20260525T160424Z",
+      "runtime_seconds": 1971.4124877499999,
+      "seed": 13,
+      "summary": {
+        "average_final_accuracy": 69.0,
+        "average_forgetting": 12.174999999999999,
+        "average_learning_accuracy": 77.2,
+        "backward_transfer": -10.25,
+        "gdumb_epochs": 20,
+        "model": "cifar_convnet",
+        "num_tasks": 5,
+        "replay_batch_size": 256,
+        "replay_buffer_size": 10000,
+        "runtime_seconds": 1971.4124877499999,
+        "seed": 13
+      },
+      "task_names": [
+        "cifar10_airplane_automobile",
+        "cifar10_bird_cat",
+        "cifar10_deer_dog",
+        "cifar10_frog_horse",
+        "cifar10_ship_truck"
+      ]
+    },
+    {
+      "benchmark": "split_cifar10_headline",
+      "git_commit": "eea83cbce1406e91f4c2929c8467b70506f28e4a",
+      "method": "gdumb",
+      "run_dir": "runs/split_cifar10_headline_gdumb_20260525T163726Z",
+      "runtime_seconds": 2069.4647208339884,
+      "seed": 21,
+      "summary": {
+        "average_final_accuracy": 68.56,
+        "average_forgetting": 13.600000000000001,
+        "average_learning_accuracy": 79.44,
+        "backward_transfer": -13.600000000000001,
+        "gdumb_epochs": 20,
+        "model": "cifar_convnet",
+        "num_tasks": 5,
+        "replay_batch_size": 256,
+        "replay_buffer_size": 10000,
+        "runtime_seconds": 2069.4647208339884,
+        "seed": 21
+      },
+      "task_names": [
+        "cifar10_airplane_automobile",
+        "cifar10_bird_cat",
+        "cifar10_deer_dog",
+        "cifar10_frog_horse",
+        "cifar10_ship_truck"
+      ]
+    },
+    {
+      "benchmark": "split_cifar10_headline",
       "git_commit": "972afde98a891a3c5aa25c8602b4e266fce07178",
       "method": "lwf",
       "run_dir": "runs/split_cifar10_headline_lwf_20260525T131842Z",
@@ -404,5 +479,5 @@
       ]
     }
   ],
-  "title": "Split CIFAR-10 Headline Benchmark"
+  "title": "Split CIFAR-10 Benchmark"
 }

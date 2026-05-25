@@ -368,16 +368,17 @@ def _bar_chart(
 
 def _plot_retention_curves(plt: Any, records: Sequence[RunRecord], path: Path) -> Path:
     fig, axis = plt.subplots(figsize=(9.5, 5.5), constrained_layout=True)
+    max_steps = max(record.accuracy_matrix.shape[0] for record in records)
     for method, method_records in _records_by_method(records).items():
         curves = []
         for record in method_records:
-            curve = []
+            curve = [np.nan] * max_steps
             for step in range(record.accuracy_matrix.shape[0]):
                 seen = record.accuracy_matrix[step, : step + 1]
-                curve.append(float(np.nanmean(seen)))
+                curve[step] = float(np.nanmean(seen))
             curves.append(curve)
         matrix = np.asarray(curves, dtype=float)
-        x_values = np.arange(1, matrix.shape[1] + 1)
+        x_values = np.arange(1, max_steps + 1)
         mean_curve = np.nanmean(matrix, axis=0)
         std_curve = np.nanstd(matrix, axis=0)
         color = _method_color(method)
@@ -391,7 +392,7 @@ def _plot_retention_curves(plt: Any, records: Sequence[RunRecord], path: Path) -
     axis.set_xlabel("After training task")
     axis.set_ylabel("Mean accuracy on seen tasks (%)")
     axis.set_ylim(0, 100)
-    axis.set_xticks(np.arange(1, max(record.accuracy_matrix.shape[0] for record in records) + 1))
+    axis.set_xticks(np.arange(1, max_steps + 1))
     axis.grid(alpha=0.25)
     axis.legend(frameon=False)
     fig.savefig(path, dpi=180, bbox_inches="tight")

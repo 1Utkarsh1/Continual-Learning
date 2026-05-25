@@ -127,7 +127,10 @@ def add_config_arguments(parser: argparse.ArgumentParser) -> None:
 
 
 def add_runtime_overrides(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument("--model", choices=["linear", "mlp", "small_cnn", "cnn"])
+    parser.add_argument(
+        "--model",
+        choices=["linear", "mlp", "small_cnn", "cnn", "cifar_convnet", "resnet18_cifar"],
+    )
     parser.add_argument("--epochs", type=int)
     parser.add_argument("--seed", type=int)
     parser.add_argument("--device")

@@ -14,6 +14,8 @@ tasks after every training step.
 - Learning without Forgetting with temperature-scaled distillation.
 - DER++ with online replay-logit storage.
 - A-GEM with replay-memory gradient projection.
+- ER-ACE with asymmetric current-task cross-entropy plus replay.
+- GDumb with class-balanced memory and from-scratch memory training.
 
 ## Datasets
 
@@ -43,3 +45,5 @@ into a leaderboard plus report plots.
 The Split CIFAR-10 reported result is designed for local reproducibility and
 engineering verification. It is not a leaderboard claim. Serious research
 comparisons should increase seeds, epochs, memory budgets, and dataset coverage.
+The GDumb comparison uses a larger memory budget than the main 5,000-example
+suite and should be read as a high-memory result rather than a same-budget claim.
