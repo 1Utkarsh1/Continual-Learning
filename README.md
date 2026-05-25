@@ -16,8 +16,9 @@ and plots. The primary reported result is a verified Split CIFAR-10 suite.
 ## Project Scope
 
 - Config-driven benchmark runner for single runs and multi-method suites.
-- Implemented baseline fine-tuning, EWC, reservoir replay, LwF, DER++, A-GEM,
-  ER-ACE, GDumb, and experimental Calibrated Anchor Replay.
+- Implemented baseline fine-tuning, joint cumulative-data oracle, EWC,
+  reservoir replay, LwF, DER++, A-GEM, ER-ACE, GDumb, and experimental
+  Calibrated Anchor Replay.
 - Includes CAR-component ablations exposed as `bic`, `icarl`, and `x_der_lite`;
   these are lightweight protocol baselines, not exact reproductions of the
   original papers.
@@ -89,7 +90,7 @@ Run a matched-memory paper suite:
 ```bash
 cl-bench suite \
   --config-name paper/split_cifar10_full \
-  --methods replay derpp er_ace gdumb car bic icarl x_der_lite \
+  --methods joint replay derpp er_ace gdumb car bic icarl x_der_lite \
   --seeds 13 21 34 55 89 \
   --memory-budgets 200 500 1000 2000 5000 \
   --tracking both \
@@ -223,6 +224,8 @@ The report command writes:
 - `leaderboard.png`
 - `retention_curves.png`
 - `accuracy_matrices.png`
+Paper-mode reports also write memory-accuracy Pareto plots, per-seed CSVs,
+LaTeX tables, and a claims table for matched-protocol research comparisons.
 
 Generated `data/`, `runs/`, `results/`, logs, checkpoints, and NumPy arrays are
 ignored by git. Curated README assets under `docs/assets/` are intentionally kept.
@@ -231,6 +234,8 @@ ignored by git. Curated README assets under `docs/assets/` are intentionally kep
 
 - EWC estimates the empirical Fisher from per-sample log-likelihood gradients and
   normalizes by the actual number of samples used.
+- Joint training accumulates all examples seen so far and retrains an oracle
+  upper-bound model for sanity-checking continual-learning methods.
 - Replay uses reservoir sampling so a bounded buffer represents the full observed
   stream instead of only the newest examples.
 - LwF stores a frozen teacher after each task and combines supervised loss with

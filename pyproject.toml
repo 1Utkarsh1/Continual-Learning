@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "continual-learning-bench"
-version = "0.4.0"
+version = "0.4.1"
 description = "A PyTorch benchmark framework for reproducible continual-learning experiments."
 readme = "README.md"
 requires-python = ">=3.10"

@@ -9,6 +9,7 @@ tasks after every training step.
 ## Implemented Methods
 
 - Baseline sequential fine-tuning.
+- Joint cumulative-data training as an oracle upper bound over seen tasks.
 - Elastic Weight Consolidation with empirical Fisher estimates.
 - Reservoir replay with a bounded memory budget.
 - Learning without Forgetting with temperature-scaled distillation.
@@ -41,6 +42,8 @@ tasks after every training step.
 - Average learning accuracy: mean diagonal accuracy after each task is learned.
 - Average forgetting: best previous accuracy minus final accuracy for prior tasks.
 - Backward transfer: final accuracy minus first-learned accuracy on prior tasks.
+- Forward transfer: accuracy gain on each future task immediately before it is
+  trained, relative to the randomly initialized model's initial task accuracy.
 
 ## Reproducibility
 

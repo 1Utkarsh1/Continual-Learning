@@ -13,9 +13,9 @@ must be described as protocol variants rather than direct wins.
 ## Primary Experiment Commands
 
 ```bash
-cl-bench suite --config-name paper/split_cifar10_full --methods replay derpp er_ace gdumb car bic icarl x_der_lite --seeds 13 21 34 55 89 --memory-budgets 200 500 1000 2000 5000 --tracking both --paper --report-dir docs/paper/assets/split_cifar10_full --title "Split CIFAR-10 Full-Data Paper Protocol"
-cl-bench suite --config-name paper/split_cifar100_full --methods replay derpp er_ace gdumb car bic icarl x_der_lite --seeds 13 21 34 55 89 --memory-budgets 200 500 1000 2000 5000 --tracking both --paper --report-dir docs/paper/assets/split_cifar100_full --title "Split CIFAR-100 Full-Data Paper Protocol"
-cl-bench suite --config-name paper/split_tinyimagenet --methods replay derpp er_ace gdumb car bic icarl x_der_lite --seeds 13 21 34 --memory-budgets 500 1000 2000 5000 10000 --tracking both --paper --report-dir docs/paper/assets/split_tinyimagenet --title "Split TinyImageNet Paper Protocol"
+cl-bench suite --config-name paper/split_cifar10_full --methods joint replay derpp er_ace gdumb car bic icarl x_der_lite --seeds 13 21 34 55 89 --memory-budgets 200 500 1000 2000 5000 --tracking both --paper --report-dir docs/paper/assets/split_cifar10_full --title "Split CIFAR-10 Full-Data Paper Protocol"
+cl-bench suite --config-name paper/split_cifar100_full --methods joint replay derpp er_ace gdumb car bic icarl x_der_lite --seeds 13 21 34 55 89 --memory-budgets 200 500 1000 2000 5000 --tracking both --paper --report-dir docs/paper/assets/split_cifar100_full --title "Split CIFAR-100 Full-Data Paper Protocol"
+cl-bench suite --config-name paper/split_tinyimagenet --methods joint replay derpp er_ace gdumb car bic icarl x_der_lite --seeds 13 21 34 --memory-budgets 500 1000 2000 5000 10000 --tracking both --paper --report-dir docs/paper/assets/split_tinyimagenet --title "Split TinyImageNet Paper Protocol"
 ```
 
 ## Manuscript Status
@@ -23,3 +23,5 @@ cl-bench suite --config-name paper/split_tinyimagenet --methods replay derpp er_
 - `manuscript.tex`: outline and claims skeleton.
 - `reproducibility_checklist.md`: run and reporting checklist.
 - `claims_table.md`: public claim discipline before any SOTA wording.
+- `related_work.md`: compact positioning against established continual-learning
+  methods and frameworks.

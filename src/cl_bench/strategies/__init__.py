@@ -11,6 +11,7 @@ from cl_bench.strategies.derpp import DERPPStrategy, build_derpp
 from cl_bench.strategies.er_ace import ERACEStrategy, build_er_ace
 from cl_bench.strategies.ewc import EWCStrategy, build_ewc
 from cl_bench.strategies.gdumb import GDumbStrategy, build_gdumb
+from cl_bench.strategies.joint import JointTrainingStrategy, build_joint
 from cl_bench.strategies.lwf import LwFStrategy, build_lwf
 from cl_bench.strategies.replay import ReplayStrategy, build_replay
 
@@ -24,6 +25,7 @@ Strategy = (
     | ERACEStrategy
     | GDumbStrategy
     | CARStrategy
+    | JointTrainingStrategy
 )
 
 
@@ -99,6 +101,14 @@ def create_strategy(config: ExperimentConfig, model: nn.Module, device: torch.de
             alpha=config.lwf_alpha,
             temperature=config.lwf_temperature,
         )
+    elif method == "joint":
+        strategy = build_joint(
+            model,
+            device,
+            learning_rate=config.learning_rate,
+            batch_size=config.batch_size,
+            seed=config.seed,
+        )
     elif method in {"car", "bic", "icarl", "x_der_lite"}:
         use_calibration = method != "icarl"
         strategy = build_car(
@@ -157,6 +167,7 @@ __all__ = [
     "ERACEStrategy",
     "EWCStrategy",
     "GDumbStrategy",
+    "JointTrainingStrategy",
     "LwFStrategy",
     "ReplayStrategy",
     "Strategy",

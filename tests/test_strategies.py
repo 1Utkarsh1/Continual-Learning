@@ -13,6 +13,7 @@ from cl_bench.strategies.derpp import DERPPStrategy
 from cl_bench.strategies.er_ace import ERACEStrategy
 from cl_bench.strategies.ewc import EWCStrategy
 from cl_bench.strategies.gdumb import GDumbStrategy
+from cl_bench.strategies.joint import JointTrainingStrategy
 from cl_bench.strategies.lwf import LwFStrategy
 from cl_bench.strategies.replay import BalancedReplayBuffer
 
@@ -205,6 +206,25 @@ def test_gdumb_collects_balanced_memory_and_trains_after_task() -> None:
     metrics = strategy.evaluate(tasks[0].test_loader)
 
     assert len(strategy.buffer) > 0
+    assert 0.0 <= metrics["accuracy"] <= 100.0
+
+
+def test_joint_training_accumulates_all_seen_examples() -> None:
+    config = _tiny_config()
+    tasks, input_shape, num_classes = build_task_loaders(config)
+    model = get_model("linear", input_shape, num_classes)
+    strategy = JointTrainingStrategy(
+        model,
+        torch.device("cpu"),
+        learning_rate=0.05,
+        batch_size=8,
+        seed=1,
+    )
+
+    strategy.train_task(tasks[0].train_loader, tasks[0].val_loader, task_id=0, epochs=1)
+    metrics = strategy.evaluate(tasks[0].test_loader)
+
+    assert sum(int(targets.numel()) for targets in strategy.seen_targets) > 0
     assert 0.0 <= metrics["accuracy"] <= 100.0
 
 

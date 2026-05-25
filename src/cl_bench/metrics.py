@@ -40,7 +40,11 @@ def compute_forgetting(accuracy_matrix: np.ndarray) -> np.ndarray:
     return forgetting
 
 
-def summarize_accuracy(accuracy_matrix: np.ndarray) -> dict[str, float]:
+def summarize_accuracy(
+    accuracy_matrix: np.ndarray,
+    initial_accuracy: np.ndarray | None = None,
+    pre_task_accuracy: np.ndarray | None = None,
+) -> dict[str, float]:
     """Summarize continual-learning accuracy and forgetting metrics."""
 
     matrix = np.asarray(accuracy_matrix, dtype=float)
@@ -71,12 +75,35 @@ def summarize_accuracy(accuracy_matrix: np.ndarray) -> dict[str, float]:
     else:
         backward_transfer = 0.0
 
+    forward_transfer = compute_forward_transfer(initial_accuracy, pre_task_accuracy)
+
     return {
         "average_final_accuracy": average_final_accuracy,
         "average_learning_accuracy": average_learning_accuracy,
         "average_forgetting": average_forgetting,
         "backward_transfer": backward_transfer,
+        "forward_transfer": forward_transfer,
     }
+
+
+def compute_forward_transfer(
+    initial_accuracy: np.ndarray | None,
+    pre_task_accuracy: np.ndarray | None,
+) -> float:
+    """Compute mean pre-training improvement on future tasks before learning them."""
+
+    if initial_accuracy is None or pre_task_accuracy is None:
+        return 0.0
+    initial = np.asarray(initial_accuracy, dtype=float)
+    pre_task = np.asarray(pre_task_accuracy, dtype=float)
+    if initial.shape != pre_task.shape or initial.size <= 1:
+        return 0.0
+    transfers = [
+        pre_task[task_id] - initial[task_id]
+        for task_id in range(1, initial.size)
+        if not np.isnan(initial[task_id]) and not np.isnan(pre_task[task_id])
+    ]
+    return float(np.mean(transfers)) if transfers else 0.0
 
 
 def matrix_to_jsonable(matrix: np.ndarray) -> list[list[float | None]]:

@@ -2,7 +2,12 @@ from __future__ import annotations
 
 import numpy as np
 
-from cl_bench.metrics import compute_forgetting, matrix_to_jsonable, summarize_accuracy
+from cl_bench.metrics import (
+    compute_forgetting,
+    compute_forward_transfer,
+    matrix_to_jsonable,
+    summarize_accuracy,
+)
 
 
 def test_forgetting_uses_best_previous_accuracy() -> None:
@@ -31,4 +36,22 @@ def test_summary_and_json_matrix_are_nan_safe() -> None:
 
     assert summary["average_final_accuracy"] == 57.5
     assert summary["average_forgetting"] == 10.0
+    assert summary["forward_transfer"] == 0.0
     assert json_matrix == [[50.0, None], [40.0, 75.0]]
+
+
+def test_forward_transfer_uses_pre_task_gain_over_initial_accuracy() -> None:
+    initial = np.array([25.0, 20.0, 10.0])
+    pre_task = np.array([np.nan, 35.0, 5.0])
+
+    assert compute_forward_transfer(initial, pre_task) == 5.0
+
+    matrix = np.array(
+        [
+            [70.0, np.nan, np.nan],
+            [65.0, 80.0, np.nan],
+            [60.0, 75.0, 90.0],
+        ]
+    )
+    summary = summarize_accuracy(matrix, initial, pre_task)
+    assert summary["forward_transfer"] == 5.0

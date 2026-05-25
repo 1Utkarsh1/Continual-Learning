@@ -116,6 +116,7 @@ def aggregate_records(records: Sequence[RunRecord]) -> list[dict[str, float | in
         ]
         forgetting = [_metric(record, "average_forgetting") for record in method_records]
         backward_transfer = [_metric(record, "backward_transfer") for record in method_records]
+        forward_transfer = [_metric(record, "forward_transfer") for record in method_records]
         runtimes = [record.runtime_seconds for record in method_records]
         memory_budgets = [_metric(record, "replay_buffer_size") for record in method_records]
         models = ",".join(
@@ -138,6 +139,7 @@ def aggregate_records(records: Sequence[RunRecord]) -> list[dict[str, float | in
                 "average_forgetting_mean": _mean(forgetting),
                 "average_forgetting_std": _std(forgetting),
                 "backward_transfer_mean": _mean(backward_transfer),
+                "forward_transfer_mean": _mean(forward_transfer),
                 "runtime_seconds_mean": _mean(runtimes),
                 "memory_budget_mean": _mean(memory_budgets),
             }
@@ -193,6 +195,7 @@ def _write_leaderboard_csv(path: Path, rows: Sequence[dict[str, float | int | st
         "average_forgetting_mean",
         "average_forgetting_std",
         "backward_transfer_mean",
+        "forward_transfer_mean",
         "runtime_seconds_mean",
         "memory_budget_mean",
     ]
@@ -254,12 +257,12 @@ def _write_markdown(
         "",
         "## Leaderboard",
         "",
-        "| Method | Runs | Seeds | Memory | Final accuracy | Forgetting | Backward transfer | Mean runtime |",
-        "| --- | ---: | --- | ---: | ---: | ---: | ---: | ---: |",
+        "| Method | Runs | Seeds | Memory | Final accuracy | Forgetting | Backward transfer | Forward transfer | Mean runtime |",
+        "| --- | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: |",
     ]
     for row in leaderboard:
         lines.append(
-            "| {method} | {runs} | {seeds} | {memory:.0f} | {accuracy} | {forgetting} | {bwt} | {runtime} |".format(
+            "| {method} | {runs} | {seeds} | {memory:.0f} | {accuracy} | {forgetting} | {bwt} | {fwt} | {runtime} |".format(
                 method=row["method"],
                 runs=row["runs"],
                 seeds=row["seeds"],
@@ -275,6 +278,7 @@ def _write_markdown(
                     suffix="%",
                 ),
                 bwt=f"{float(row['backward_transfer_mean']):.2f}%",
+                fwt=f"{float(row['forward_transfer_mean']):.2f}%",
                 runtime=f"{float(row['runtime_seconds_mean']):.1f}s",
             )
         )
@@ -378,6 +382,7 @@ def _write_paper_tables(
             "average_final_accuracy",
             "average_forgetting",
             "backward_transfer",
+            "forward_transfer",
             "runtime_seconds",
             "git_commit",
         ]
@@ -394,26 +399,28 @@ def _write_paper_tables(
                     "average_final_accuracy": _metric(record, "average_final_accuracy"),
                     "average_forgetting": _metric(record, "average_forgetting"),
                     "backward_transfer": _metric(record, "backward_transfer"),
+                    "forward_transfer": _metric(record, "forward_transfer"),
                     "runtime_seconds": record.runtime_seconds,
                     "git_commit": record.git_commit,
                 }
             )
 
     latex_lines = [
-        r"\begin{tabular}{lrrrr}",
+        r"\begin{tabular}{lrrrrr}",
         r"\toprule",
-        r"Method & Memory & Final Acc. & Forgetting & Runtime (s) \\",
+        r"Method & Memory & Final Acc. & Forgetting & FWT & Runtime (s) \\",
         r"\midrule",
     ]
     for row in leaderboard:
         latex_lines.append(
-            "{method} & {memory:.0f} & {acc:.2f} $\\pm$ {acc_std:.2f} & {forget:.2f} $\\pm$ {forget_std:.2f} & {runtime:.1f} \\\\".format(
+            "{method} & {memory:.0f} & {acc:.2f} $\\pm$ {acc_std:.2f} & {forget:.2f} $\\pm$ {forget_std:.2f} & {fwt:.2f} & {runtime:.1f} \\\\".format(
                 method=row["method"],
                 memory=float(row["memory_budget_mean"]),
                 acc=float(row["average_final_accuracy_mean"]),
                 acc_std=float(row["average_final_accuracy_std"]),
                 forget=float(row["average_forgetting_mean"]),
                 forget_std=float(row["average_forgetting_std"]),
+                fwt=float(row["forward_transfer_mean"]),
                 runtime=float(row["runtime_seconds_mean"]),
             )
         )
@@ -448,6 +455,8 @@ def write_export(
             "model": record.summary.get("model", ""),
             "average_final_accuracy": _metric(record, "average_final_accuracy"),
             "average_forgetting": _metric(record, "average_forgetting"),
+            "backward_transfer": _metric(record, "backward_transfer"),
+            "forward_transfer": _metric(record, "forward_transfer"),
             "runtime_seconds": record.runtime_seconds,
             "run_dir": str(record.run_dir),
             "git_commit": record.git_commit,
@@ -763,6 +772,7 @@ def _method_color(method: str) -> str:
         "bic": "#9333ea",
         "icarl": "#ca8a04",
         "x_der_lite": "#4f46e5",
+        "joint": "#111827",
     }.get(method, "#7c3aed")
 
 

@@ -57,8 +57,48 @@ def run_experiment(config: ExperimentConfig, repo_dir: str | Path | None = None)
 
         start_time = time.perf_counter()
         accuracy_matrix = np.full((len(tasks), len(tasks)), np.nan, dtype=float)
+        initial_accuracy = np.full(len(tasks), np.nan, dtype=float)
+        pre_task_accuracy = np.full(len(tasks), np.nan, dtype=float)
+
+        for eval_task_id, eval_task in enumerate(tasks):
+            metrics = strategy.evaluate(eval_task.test_loader)
+            initial_accuracy[eval_task_id] = metrics["accuracy"]
+            tracker.log_event(
+                {
+                    "event": "initial_evaluation",
+                    "eval_task_id": eval_task_id,
+                    "eval_task_name": eval_task.name,
+                    **metrics,
+                }
+            )
+            mlflow_logger.log_metrics(
+                {
+                    f"initial_task_{eval_task_id}_accuracy": metrics["accuracy"],
+                    f"initial_task_{eval_task_id}_loss": metrics["loss"],
+                },
+                step=0,
+            )
 
         for task_id, task in enumerate(tasks):
+            if task_id > 0:
+                metrics = strategy.evaluate(task.test_loader)
+                pre_task_accuracy[task_id] = metrics["accuracy"]
+                tracker.log_event(
+                    {
+                        "event": "pre_task_evaluation",
+                        "task_id": task_id,
+                        "eval_task_name": task.name,
+                        **metrics,
+                    }
+                )
+                mlflow_logger.log_metrics(
+                    {
+                        f"pre_task_{task_id}_accuracy": metrics["accuracy"],
+                        f"pre_task_{task_id}_loss": metrics["loss"],
+                    },
+                    step=task_id,
+                )
+
             tracker.log_event(
                 {
                     "event": "task_started",
@@ -107,7 +147,7 @@ def run_experiment(config: ExperimentConfig, repo_dir: str | Path | None = None)
 
         runtime_seconds = time.perf_counter() - start_time
         forgetting_matrix = compute_forgetting(accuracy_matrix)
-        summary = summarize_accuracy(accuracy_matrix)
+        summary = summarize_accuracy(accuracy_matrix, initial_accuracy, pre_task_accuracy)
         summary.update(
             {
                 "runtime_seconds": runtime_seconds,
@@ -128,6 +168,13 @@ def run_experiment(config: ExperimentConfig, repo_dir: str | Path | None = None)
 
         tracker.write_json("accuracy_matrix.json", matrix_to_jsonable(accuracy_matrix))
         tracker.write_json("forgetting_matrix.json", matrix_to_jsonable(forgetting_matrix))
+        tracker.write_json(
+            "transfer_baselines.json",
+            {
+                "initial_accuracy": matrix_to_jsonable(initial_accuracy.reshape(1, -1))[0],
+                "pre_task_accuracy": matrix_to_jsonable(pre_task_accuracy.reshape(1, -1))[0],
+            },
+        )
         tracker.write_matrix_csv("accuracy_matrix.csv", accuracy_matrix)
         tracker.write_matrix_csv("forgetting_matrix.csv", forgetting_matrix)
 
@@ -143,6 +190,8 @@ def run_experiment(config: ExperimentConfig, repo_dir: str | Path | None = None)
                 "summary": summary,
                 "accuracy_matrix": matrix_to_jsonable(accuracy_matrix),
                 "forgetting_matrix": matrix_to_jsonable(forgetting_matrix),
+                "initial_accuracy": matrix_to_jsonable(initial_accuracy.reshape(1, -1))[0],
+                "pre_task_accuracy": matrix_to_jsonable(pre_task_accuracy.reshape(1, -1))[0],
                 "runtime_seconds": runtime_seconds,
                 "seed": config.seed,
                 "git_commit": commit,

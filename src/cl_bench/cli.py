@@ -23,6 +23,7 @@ METHODS = (
     "bic",
     "icarl",
     "x_der_lite",
+    "joint",
 )
 
 
