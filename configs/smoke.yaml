@@ -1,0 +1,33 @@
+name: smoke
+method: baseline
+seed: 7
+device: cpu
+model: linear
+data_dir: data
+output_dir: runs
+training:
+  epochs: 1
+  batch_size: 16
+  eval_batch_size: 64
+  learning_rate: 0.05
+  val_fraction: 0.2
+  num_workers: 0
+strategy:
+  ewc_lambda: 10.0
+  fisher_samples: 16
+  replay_buffer_size: 32
+  replay_batch_size: 8
+  replay_loss_weight: 1.0
+  lwf_alpha: 0.5
+  lwf_temperature: 2.0
+tasks:
+  - name: synthetic_0_1
+    dataset: synthetic
+    classes: [0, 1]
+    samples_per_class: 20
+    test_samples_per_class: 10
+  - name: synthetic_2_3
+    dataset: synthetic
+    classes: [2, 3]
+    samples_per_class: 20
+    test_samples_per_class: 10

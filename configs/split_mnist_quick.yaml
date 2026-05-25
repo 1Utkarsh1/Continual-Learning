@@ -1,0 +1,48 @@
+name: split_mnist_quick
+method: baseline
+seed: 13
+device: auto
+model: small_cnn
+data_dir: data
+output_dir: runs
+training:
+  epochs: 3
+  batch_size: 128
+  eval_batch_size: 512
+  learning_rate: 0.001
+  val_fraction: 0.1
+  num_workers: 0
+strategy:
+  ewc_lambda: 75.0
+  fisher_samples: 64
+  replay_buffer_size: 400
+  replay_batch_size: 64
+  replay_loss_weight: 1.0
+  lwf_alpha: 0.5
+  lwf_temperature: 2.0
+tasks:
+  - name: mnist_0_1
+    dataset: mnist
+    classes: [0, 1]
+    train_limit: 600
+    test_limit: 300
+  - name: mnist_2_3
+    dataset: mnist
+    classes: [2, 3]
+    train_limit: 600
+    test_limit: 300
+  - name: mnist_4_5
+    dataset: mnist
+    classes: [4, 5]
+    train_limit: 600
+    test_limit: 300
+  - name: mnist_6_7
+    dataset: mnist
+    classes: [6, 7]
+    train_limit: 600
+    test_limit: 300
+  - name: mnist_8_9
+    dataset: mnist
+    classes: [8, 9]
+    train_limit: 600
+    test_limit: 300
