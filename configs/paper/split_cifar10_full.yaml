@@ -1,0 +1,56 @@
+name: split_cifar10_full
+method: car
+seed: 13
+device: auto
+model: resnet18_cifar
+data_dir: data
+output_dir: runs
+tracking:
+  mode: both
+  mlflow_tracking_uri: sqlite:///mlruns/mlflow.db
+  mlflow_experiment: continual-learning-paper
+training:
+  epochs: 20
+  batch_size: 128
+  eval_batch_size: 512
+  learning_rate: 0.05
+  optimizer: sgd
+  momentum: 0.9
+  weight_decay: 0.0005
+  scheduler: cosine
+  warmup_epochs: 1
+  label_smoothing: 0.05
+  val_fraction: 0.1
+  num_workers: 2
+  augment: true
+strategy:
+  replay_buffer_size: 2000
+  replay_batch_size: 128
+  replay_loss_weight: 1.0
+  derpp_alpha: 0.1
+  derpp_beta: 1.0
+  car_logit_anchor_weight: 0.25
+  car_replay_ce_weight: 1.0
+  car_feature_anchor_weight: 0.05
+  car_prototype_anchor_weight: 0.05
+  car_calibration_epochs: 10
+  car_calibration_lr: 0.01
+  car_calibration_weight_decay: 0.0
+  car_replay_augment: true
+  car_use_current_task_mask: true
+tasks:
+  - name: cifar10_airplane_automobile
+    dataset: cifar10
+    classes: [0, 1]
+  - name: cifar10_bird_cat
+    dataset: cifar10
+    classes: [2, 3]
+  - name: cifar10_deer_dog
+    dataset: cifar10
+    classes: [4, 5]
+  - name: cifar10_frog_horse
+    dataset: cifar10
+    classes: [6, 7]
+  - name: cifar10_ship_truck
+    dataset: cifar10
+    classes: [8, 9]

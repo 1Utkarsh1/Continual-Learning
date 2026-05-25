@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import platform
 import random
 import time
 from pathlib import Path
@@ -21,6 +22,7 @@ def run_experiment(config: ExperimentConfig, repo_dir: str | Path | None = None)
     tasks, input_shape, num_classes = build_task_loaders(config)
     model = get_model(config.model, input_shape=input_shape, num_classes=num_classes).to(device)
     strategy = create_strategy(config, model, device)
+    model_parameter_count = sum(parameter.numel() for parameter in model.parameters())
 
     run_dir = create_run_dir(config.output_dir, config.name, config.method)
     tracker = ExperimentTracker(run_dir)
@@ -34,6 +36,11 @@ def run_experiment(config: ExperimentConfig, repo_dir: str | Path | None = None)
         "seed": config.seed,
         "device": str(device),
         "git_commit": commit,
+        "python": platform.python_version(),
+        "torch": torch.__version__,
+        "model_parameter_count": model_parameter_count,
+        "task_order": [task.name for task in tasks],
+        "task_classes": [task.classes for task in tasks],
     }
     tracker.write_json("run_metadata.json", metadata)
     mlflow_enabled = config.tracking.lower() in {"mlflow", "both"}
@@ -109,8 +116,15 @@ def run_experiment(config: ExperimentConfig, repo_dir: str | Path | None = None)
                 "model": config.model,
                 "replay_buffer_size": config.replay_buffer_size,
                 "replay_batch_size": config.replay_batch_size,
+                "gdumb_epochs": config.gdumb_epochs,
+                "optimizer": config.optimizer,
+                "scheduler": config.scheduler,
+                "weight_decay": config.weight_decay,
+                "label_smoothing": config.label_smoothing,
+                "model_parameter_count": model_parameter_count,
             }
         )
+        summary.update(strategy.run_summary())
 
         tracker.write_json("accuracy_matrix.json", matrix_to_jsonable(accuracy_matrix))
         tracker.write_json("forgetting_matrix.json", matrix_to_jsonable(forgetting_matrix))

@@ -16,10 +16,35 @@ class ContinualLearningStrategy(ABC):
         self.model = model
         self.device = device
         self.learning_rate = learning_rate
+        self.optimizer_name = "adam"
+        self.momentum = 0.9
+        self.weight_decay = 0.0
+        self.scheduler_name = "none"
+        self.warmup_epochs = 0
+        self.label_smoothing = 0.0
         self.criterion = nn.CrossEntropyLoss()
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=learning_rate)
+        self.optimizer = self._build_optimizer()
+        self.scheduler: torch.optim.lr_scheduler.LRScheduler | None = None
         self.current_task = -1
         self.seen_tasks = 0
+
+    def configure_training(
+        self,
+        optimizer: str,
+        momentum: float,
+        weight_decay: float,
+        scheduler: str,
+        warmup_epochs: int,
+        label_smoothing: float,
+    ) -> None:
+        self.optimizer_name = optimizer.lower().replace("-", "_")
+        self.momentum = momentum
+        self.weight_decay = weight_decay
+        self.scheduler_name = scheduler.lower().replace("-", "_")
+        self.warmup_epochs = warmup_epochs
+        self.label_smoothing = label_smoothing
+        self.criterion = nn.CrossEntropyLoss(label_smoothing=label_smoothing)
+        self.optimizer = self._build_optimizer()
 
     def train_task(
         self,
@@ -31,7 +56,8 @@ class ContinualLearningStrategy(ABC):
         self.current_task = task_id
         self.seen_tasks = max(self.seen_tasks, task_id + 1)
         self.before_task(task_id)
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
+        self.optimizer = self._build_optimizer()
+        self.scheduler = self._build_scheduler(epochs)
 
         best_state: dict[str, torch.Tensor] | None = None
         best_val_loss = float("inf")
@@ -51,6 +77,9 @@ class ContinualLearningStrategy(ABC):
             if val_metrics["loss"] < best_val_loss:
                 best_val_loss = float(val_metrics["loss"])
                 best_state = clone_state_dict(self.model)
+
+            if self.scheduler is not None:
+                self.scheduler.step()
 
         if best_state is not None:
             load_state_dict(self.model, best_state, self.device)
@@ -113,8 +142,49 @@ class ContinualLearningStrategy(ABC):
     def extra_state_dict(self) -> dict[str, Any]:
         return {}
 
+    def run_summary(self) -> dict[str, float | int | str | None]:
+        return {}
+
     def load_extra_state_dict(self, state: dict[str, Any]) -> None:
         del state
+
+    def _build_optimizer(self) -> torch.optim.Optimizer:
+        if self.optimizer_name == "sgd":
+            return torch.optim.SGD(
+                self.model.parameters(),
+                lr=self.learning_rate,
+                momentum=self.momentum,
+                weight_decay=self.weight_decay,
+            )
+        if self.optimizer_name == "adamw":
+            return torch.optim.AdamW(
+                self.model.parameters(),
+                lr=self.learning_rate,
+                weight_decay=self.weight_decay,
+            )
+        if self.optimizer_name == "adam":
+            return torch.optim.Adam(
+                self.model.parameters(),
+                lr=self.learning_rate,
+                weight_decay=self.weight_decay,
+            )
+        raise ValueError(f"Unsupported optimizer: {self.optimizer_name}")
+
+    def _build_scheduler(self, epochs: int) -> torch.optim.lr_scheduler.LRScheduler | None:
+        if self.scheduler_name in {"none", "constant", ""}:
+            return None
+        if self.scheduler_name == "cosine":
+            warmup_epochs = min(max(0, self.warmup_epochs), max(0, epochs - 1))
+
+            def lr_lambda(epoch: int) -> float:
+                if warmup_epochs and epoch < warmup_epochs:
+                    return float(epoch + 1) / float(warmup_epochs)
+                cosine_epochs = max(1, epochs - warmup_epochs)
+                progress = (epoch - warmup_epochs + 1) / float(cosine_epochs)
+                return 0.5 * (1.0 + torch.cos(torch.tensor(progress * torch.pi)).item())
+
+            return torch.optim.lr_scheduler.LambdaLR(self.optimizer, lr_lambda)
+        raise ValueError(f"Unsupported scheduler: {self.scheduler_name}")
 
     def _train_epoch(self, train_loader: DataLoader, task_id: int) -> dict[str, float]:
         self.model.train()

@@ -18,6 +18,8 @@ class TaskSpec:
     test_samples_per_class: int | None = None
     train_limit: int | None = None
     test_limit: int | None = None
+    train_feature_cache: str | None = None
+    test_feature_cache: str | None = None
 
     @classmethod
     def from_dict(cls, raw: dict[str, Any]) -> TaskSpec:
@@ -32,6 +34,8 @@ class TaskSpec:
             test_samples_per_class=_optional_int(raw.get("test_samples_per_class")),
             train_limit=_optional_int(raw.get("train_limit")),
             test_limit=_optional_int(raw.get("test_limit")),
+            train_feature_cache=_optional_str(raw.get("train_feature_cache")),
+            test_feature_cache=_optional_str(raw.get("test_feature_cache")),
         )
 
 
@@ -54,6 +58,12 @@ class ExperimentConfig:
     batch_size: int = 64
     eval_batch_size: int = 256
     learning_rate: float = 1e-3
+    optimizer: str = "adam"
+    momentum: float = 0.9
+    weight_decay: float = 0.0
+    scheduler: str = "none"
+    warmup_epochs: int = 0
+    label_smoothing: float = 0.0
     val_fraction: float = 0.1
     num_workers: int = 0
     augment: bool = True
@@ -67,6 +77,16 @@ class ExperimentConfig:
     derpp_alpha: float = 0.5
     derpp_beta: float = 1.0
     agem_memory_batch_size: int = 64
+    gdumb_epochs: int = 20
+    car_logit_anchor_weight: float = 0.25
+    car_replay_ce_weight: float = 1.0
+    car_feature_anchor_weight: float = 0.05
+    car_prototype_anchor_weight: float = 0.05
+    car_calibration_epochs: int = 10
+    car_calibration_lr: float = 0.01
+    car_calibration_weight_decay: float = 0.0
+    car_replay_augment: bool = True
+    car_use_current_task_mask: bool = True
     save_checkpoint: bool = False
 
     @classmethod
@@ -103,6 +123,12 @@ class ExperimentConfig:
             batch_size=int(training.get("batch_size", raw.get("batch_size", 64))),
             eval_batch_size=int(training.get("eval_batch_size", raw.get("eval_batch_size", 256))),
             learning_rate=float(training.get("learning_rate", raw.get("learning_rate", 1e-3))),
+            optimizer=str(training.get("optimizer", raw.get("optimizer", "adam"))),
+            momentum=float(training.get("momentum", raw.get("momentum", 0.9))),
+            weight_decay=float(training.get("weight_decay", raw.get("weight_decay", 0.0))),
+            scheduler=str(training.get("scheduler", raw.get("scheduler", "none"))),
+            warmup_epochs=int(training.get("warmup_epochs", raw.get("warmup_epochs", 0))),
+            label_smoothing=float(training.get("label_smoothing", raw.get("label_smoothing", 0.0))),
             val_fraction=float(training.get("val_fraction", raw.get("val_fraction", 0.1))),
             num_workers=int(training.get("num_workers", raw.get("num_workers", 0))),
             augment=bool(training.get("augment", raw.get("augment", True))),
@@ -123,6 +149,49 @@ class ExperimentConfig:
             derpp_beta=float(strategy.get("derpp_beta", raw.get("derpp_beta", 1.0))),
             agem_memory_batch_size=int(
                 strategy.get("agem_memory_batch_size", raw.get("agem_memory_batch_size", 64))
+            ),
+            gdumb_epochs=int(strategy.get("gdumb_epochs", raw.get("gdumb_epochs", 20))),
+            car_logit_anchor_weight=float(
+                strategy.get(
+                    "car_logit_anchor_weight",
+                    raw.get("car_logit_anchor_weight", 0.25),
+                )
+            ),
+            car_replay_ce_weight=float(
+                strategy.get("car_replay_ce_weight", raw.get("car_replay_ce_weight", 1.0))
+            ),
+            car_feature_anchor_weight=float(
+                strategy.get(
+                    "car_feature_anchor_weight",
+                    raw.get("car_feature_anchor_weight", 0.05),
+                )
+            ),
+            car_prototype_anchor_weight=float(
+                strategy.get(
+                    "car_prototype_anchor_weight",
+                    raw.get("car_prototype_anchor_weight", 0.05),
+                )
+            ),
+            car_calibration_epochs=int(
+                strategy.get("car_calibration_epochs", raw.get("car_calibration_epochs", 10))
+            ),
+            car_calibration_lr=float(
+                strategy.get("car_calibration_lr", raw.get("car_calibration_lr", 0.01))
+            ),
+            car_calibration_weight_decay=float(
+                strategy.get(
+                    "car_calibration_weight_decay",
+                    raw.get("car_calibration_weight_decay", 0.0),
+                )
+            ),
+            car_replay_augment=bool(
+                strategy.get("car_replay_augment", raw.get("car_replay_augment", True))
+            ),
+            car_use_current_task_mask=bool(
+                strategy.get(
+                    "car_use_current_task_mask",
+                    raw.get("car_use_current_task_mask", True),
+                )
             ),
             save_checkpoint=bool(raw.get("save_checkpoint", False)),
         )
@@ -206,6 +275,14 @@ def resolve_config_path(source: str | Path) -> Path:
         if path.exists():
             return path
 
+    for root in [Path.cwd() / "configs", Path(__file__).resolve().parents[2] / "configs"]:
+        matches = sorted(root.rglob(name))
+        if len(matches) == 1:
+            return matches[0]
+        if len(matches) > 1:
+            joined = ", ".join(str(match) for match in matches)
+            raise FileExistsError(f"Config name '{source}' is ambiguous: {joined}")
+
     searched = ", ".join(str(root / name) for root in search_roots)
     raise FileNotFoundError(f"Could not find config '{source}'. Searched: {searched}")
 
@@ -220,3 +297,9 @@ def _optional_int(value: Any) -> int | None:
     if value is None:
         return None
     return int(value)
+
+
+def _optional_str(value: Any) -> str | None:
+    if value is None:
+        return None
+    return str(value)

@@ -1,0 +1,12 @@
+model: resnet18_cifar
+training:
+  optimizer: sgd
+  learning_rate: 0.05
+  momentum: 0.9
+  weight_decay: 0.0005
+  scheduler: cosine
+  warmup_epochs: 1
+  label_smoothing: 0.05
+  batch_size: 128
+  eval_batch_size: 512
+  augment: true

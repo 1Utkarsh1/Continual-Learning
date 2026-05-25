@@ -37,6 +37,7 @@ def test_load_cifar_headline_config_and_overrides() -> None:
     assert config.replay_loss_weight == 3.0
     assert config.derpp_alpha == 0.1
     assert config.derpp_beta == 2.0
+    assert config.gdumb_epochs == 20
     assert len(config.tasks) == 5
     assert all(task.dataset == "cifar10" for task in config.tasks)
 
@@ -47,6 +48,20 @@ def test_load_cifar_headline_config_and_overrides() -> None:
     assert overridden.method == "agem"
     assert overridden.epochs == 1
     assert overridden.tracking == "json"
+
+
+def test_load_nested_paper_configs() -> None:
+    config = load_config("paper/split_cifar10_full")
+
+    assert config.name == "split_cifar10_full"
+    assert config.method == "car"
+    assert config.model == "resnet18_cifar"
+    assert config.optimizer == "sgd"
+    assert config.scheduler == "cosine"
+    assert config.label_smoothing == 0.05
+    assert config.car_logit_anchor_weight == 0.25
+    assert len(config.tasks) == 5
+    assert all(task.train_limit is None for task in config.tasks)
 
 
 def test_nested_training_and_strategy_values_are_parsed() -> None:

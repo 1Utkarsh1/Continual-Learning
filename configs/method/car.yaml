@@ -1,0 +1,13 @@
+method: car
+strategy:
+  replay_buffer_size: 2000
+  replay_batch_size: 128
+  car_logit_anchor_weight: 0.25
+  car_replay_ce_weight: 1.0
+  car_feature_anchor_weight: 0.05
+  car_prototype_anchor_weight: 0.05
+  car_calibration_epochs: 10
+  car_calibration_lr: 0.01
+  car_calibration_weight_decay: 0.0
+  car_replay_augment: true
+  car_use_current_task_mask: true

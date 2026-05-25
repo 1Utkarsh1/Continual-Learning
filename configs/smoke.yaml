@@ -20,6 +20,7 @@ strategy:
   replay_loss_weight: 1.0
   lwf_alpha: 0.5
   lwf_temperature: 2.0
+  gdumb_epochs: 3
 tasks:
   - name: synthetic_0_1
     dataset: synthetic
