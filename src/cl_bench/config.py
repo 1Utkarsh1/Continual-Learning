@@ -67,6 +67,7 @@ class ExperimentConfig:
     derpp_alpha: float = 0.5
     derpp_beta: float = 1.0
     agem_memory_batch_size: int = 64
+    gdumb_epochs: int = 20
     save_checkpoint: bool = False
 
     @classmethod
@@ -124,6 +125,7 @@ class ExperimentConfig:
             agem_memory_batch_size=int(
                 strategy.get("agem_memory_batch_size", raw.get("agem_memory_batch_size", 64))
             ),
+            gdumb_epochs=int(strategy.get("gdumb_epochs", raw.get("gdumb_epochs", 20))),
             save_checkpoint=bool(raw.get("save_checkpoint", False)),
         )
 

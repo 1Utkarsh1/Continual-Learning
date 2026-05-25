@@ -9,8 +9,11 @@ from cl_bench.strategies.agem import AGEMStrategy
 from cl_bench.strategies.base import clone_state_dict
 from cl_bench.strategies.baseline import BaselineStrategy
 from cl_bench.strategies.derpp import DERPPStrategy
+from cl_bench.strategies.er_ace import ERACEStrategy
 from cl_bench.strategies.ewc import EWCStrategy
+from cl_bench.strategies.gdumb import GDumbStrategy
 from cl_bench.strategies.lwf import LwFStrategy
+from cl_bench.strategies.replay import BalancedReplayBuffer
 
 
 def _tiny_config() -> ExperimentConfig:
@@ -145,3 +148,60 @@ def test_agem_projects_conflicting_gradient() -> None:
 
     assert strategy.last_gradient_dot < 0.0
     assert strategy.last_projection_applied == 1.0
+
+
+def test_er_ace_masks_current_task_logits_and_replays_memory() -> None:
+    config = _tiny_config()
+    tasks, input_shape, num_classes = build_task_loaders(config)
+    model = get_model("linear", input_shape, num_classes)
+    strategy = ERACEStrategy(
+        model,
+        torch.device("cpu"),
+        learning_rate=0.05,
+        buffer_size=16,
+        replay_batch_size=4,
+        replay_loss_weight=1.0,
+        task_classes=[[0, 1]],
+        seed=1,
+    )
+    inputs, targets = next(iter(tasks[0].train_loader))
+    strategy.observe_batch(inputs, targets, strategy.model(inputs), task_id=0)
+
+    loss, _, components = strategy.compute_loss(inputs, targets, task_id=0)
+
+    assert loss.item() > 0.0
+    assert len(strategy.buffer) == inputs.size(0)
+    assert "er_ace_current_ce_loss" in components
+    assert "replay_loss" in components
+
+
+def test_balanced_replay_buffer_rebalances_classes() -> None:
+    buffer = BalancedReplayBuffer(capacity=4, seed=1)
+    buffer.add_batch(torch.randn(4, 1, 2, 2), torch.tensor([0, 0, 0, 0]))
+    buffer.add_batch(torch.randn(4, 1, 2, 2), torch.tensor([1, 1, 1, 1]))
+
+    counts = buffer.class_counts()
+
+    assert counts[0] == 2
+    assert counts[1] == 2
+
+
+def test_gdumb_collects_balanced_memory_and_trains_after_task() -> None:
+    config = _tiny_config()
+    tasks, input_shape, num_classes = build_task_loaders(config)
+    model = get_model("linear", input_shape, num_classes)
+    strategy = GDumbStrategy(
+        model,
+        torch.device("cpu"),
+        learning_rate=0.05,
+        buffer_size=16,
+        memory_epochs=2,
+        batch_size=8,
+        seed=1,
+    )
+
+    strategy.train_task(tasks[0].train_loader, tasks[0].val_loader, task_id=0, epochs=1)
+    metrics = strategy.evaluate(tasks[0].test_loader)
+
+    assert len(strategy.buffer) > 0
+    assert 0.0 <= metrics["accuracy"] <= 100.0

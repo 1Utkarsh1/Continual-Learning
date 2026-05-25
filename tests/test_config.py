@@ -37,6 +37,7 @@ def test_load_cifar_headline_config_and_overrides() -> None:
     assert config.replay_loss_weight == 3.0
     assert config.derpp_alpha == 0.1
     assert config.derpp_beta == 2.0
+    assert config.gdumb_epochs == 20
     assert len(config.tasks) == 5
     assert all(task.dataset == "cifar10" for task in config.tasks)
 

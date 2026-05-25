@@ -28,6 +28,7 @@ strategy:
   derpp_alpha: 0.1
   derpp_beta: 2.0
   agem_memory_batch_size: 256
+  gdumb_epochs: 20
 tasks:
   - name: cifar10_airplane_automobile
     dataset: cifar10

@@ -109,6 +109,7 @@ def run_experiment(config: ExperimentConfig, repo_dir: str | Path | None = None)
                 "model": config.model,
                 "replay_buffer_size": config.replay_buffer_size,
                 "replay_batch_size": config.replay_batch_size,
+                "gdumb_epochs": config.gdumb_epochs,
             }
         )
 

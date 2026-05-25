@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import random
+from collections import Counter
 from dataclasses import dataclass
 
 import torch
@@ -84,6 +85,73 @@ class ReservoirReplayBuffer:
         if not candidates:
             raise ValueError("Cannot sample from an empty replay buffer.")
         return self.rng.sample(candidates, k=min(batch_size, len(candidates)))
+
+
+class BalancedReplayBuffer:
+    """Class-balanced memory buffer for exemplar-only baselines such as GDumb."""
+
+    def __init__(self, capacity: int, seed: int = 0):
+        if capacity < 0:
+            raise ValueError("Replay buffer capacity must be non-negative.")
+        self.capacity = capacity
+        self.rng = random.Random(seed)
+        self.samples: list[ReplaySample] = []
+        self.seen_count = 0
+
+    def __len__(self) -> int:
+        return len(self.samples)
+
+    def add_batch(
+        self,
+        inputs: torch.Tensor,
+        targets: torch.Tensor,
+        logits: torch.Tensor | None = None,
+    ) -> None:
+        logits_cpu = None if logits is None else logits.detach().cpu()
+        for index, (input_tensor, target) in enumerate(
+            zip(inputs.detach().cpu(), targets.detach().cpu(), strict=True)
+        ):
+            sample_logits = None if logits_cpu is None else logits_cpu[index]
+            self.add(input_tensor, int(target.item()), sample_logits)
+
+    def add(self, inputs: torch.Tensor, target: int, logits: torch.Tensor | None = None) -> None:
+        self.seen_count += 1
+        if self.capacity == 0:
+            return
+
+        sample = ReplaySample(
+            inputs=inputs.detach().cpu().clone(),
+            target=int(target),
+            logits=None if logits is None else logits.detach().cpu().clone(),
+        )
+        if len(self.samples) < self.capacity:
+            self.samples.append(sample)
+            return
+
+        counts = self.class_counts()
+        target_count = counts.get(int(target), 0)
+        max_count = max(counts.values(), default=0)
+        if target_count >= max_count:
+            return
+
+        replacement_classes = [label for label, count in counts.items() if count == max_count]
+        replacement_class = self.rng.choice(replacement_classes)
+        replacement_indices = [
+            index
+            for index, existing_sample in enumerate(self.samples)
+            if existing_sample.target == replacement_class
+        ]
+        self.samples[self.rng.choice(replacement_indices)] = sample
+
+    def class_counts(self) -> Counter[int]:
+        return Counter(sample.target for sample in self.samples)
+
+    def tensors(self) -> tuple[torch.Tensor, torch.Tensor]:
+        if not self.samples:
+            raise ValueError("Cannot materialize an empty replay buffer.")
+        inputs = torch.stack([sample.inputs for sample in self.samples])
+        targets = torch.tensor([sample.target for sample in self.samples], dtype=torch.long)
+        return inputs, targets
 
 
 class ReplayStrategy(ContinualLearningStrategy):

@@ -116,6 +116,7 @@ def aggregate_records(records: Sequence[RunRecord]) -> list[dict[str, float | in
         forgetting = [_metric(record, "average_forgetting") for record in method_records]
         backward_transfer = [_metric(record, "backward_transfer") for record in method_records]
         runtimes = [record.runtime_seconds for record in method_records]
+        memory_budgets = [_metric(record, "replay_buffer_size") for record in method_records]
         seeds = ",".join(
             str(record.seed) for record in sorted(method_records, key=lambda item: item.seed)
         )
@@ -132,6 +133,7 @@ def aggregate_records(records: Sequence[RunRecord]) -> list[dict[str, float | in
                 "average_forgetting_std": _std(forgetting),
                 "backward_transfer_mean": _mean(backward_transfer),
                 "runtime_seconds_mean": _mean(runtimes),
+                "memory_budget_mean": _mean(memory_budgets),
             }
         )
 
@@ -179,6 +181,7 @@ def _write_leaderboard_csv(path: Path, rows: Sequence[dict[str, float | int | st
         "average_forgetting_std",
         "backward_transfer_mean",
         "runtime_seconds_mean",
+        "memory_budget_mean",
     ]
     with path.open("w", encoding="utf-8", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=fieldnames)
@@ -238,15 +241,16 @@ def _write_markdown(
         "",
         "## Leaderboard",
         "",
-        "| Method | Runs | Seeds | Final accuracy | Forgetting | Backward transfer | Mean runtime |",
-        "| --- | ---: | --- | ---: | ---: | ---: | ---: |",
+        "| Method | Runs | Seeds | Memory | Final accuracy | Forgetting | Backward transfer | Mean runtime |",
+        "| --- | ---: | --- | ---: | ---: | ---: | ---: | ---: |",
     ]
     for row in leaderboard:
         lines.append(
-            "| {method} | {runs} | {seeds} | {accuracy} | {forgetting} | {bwt} | {runtime} |".format(
+            "| {method} | {runs} | {seeds} | {memory:.0f} | {accuracy} | {forgetting} | {bwt} | {runtime} |".format(
                 method=row["method"],
                 runs=row["runs"],
                 seeds=row["seeds"],
+                memory=float(row["memory_budget_mean"]),
                 accuracy=_format_with_std(
                     float(row["average_final_accuracy_mean"]),
                     float(row["average_final_accuracy_std"]),
@@ -478,6 +482,8 @@ def _method_color(method: str) -> str:
         "lwf": "#c2410c",
         "derpp": "#7c3aed",
         "agem": "#0f766e",
+        "er_ace": "#0891b2",
+        "gdumb": "#db2777",
     }.get(method, "#7c3aed")
 
 

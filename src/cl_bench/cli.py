@@ -10,7 +10,7 @@ from cl_bench.experiments import run_experiment
 from cl_bench.reporting import collect_runs, write_report
 from cl_bench.tracking import MLflowRunLogger
 
-METHODS = ("baseline", "ewc", "replay", "lwf", "derpp", "agem")
+METHODS = ("baseline", "ewc", "replay", "lwf", "derpp", "agem", "er_ace", "gdumb")
 
 
 def main(argv: Sequence[str] | None = None) -> int:
