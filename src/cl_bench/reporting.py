@@ -103,12 +103,13 @@ def load_run(metrics_path: str | Path) -> RunRecord:
 def aggregate_records(records: Sequence[RunRecord]) -> list[dict[str, float | int | str]]:
     """Aggregate run summaries by method for leaderboard-style reporting."""
 
-    by_method: dict[str, list[RunRecord]] = defaultdict(list)
+    by_method: dict[tuple[str, int], list[RunRecord]] = defaultdict(list)
     for record in records:
-        by_method[record.method].append(record)
+        memory_budget = int(_metric(record, "replay_buffer_size"))
+        by_method[(record.method, memory_budget)].append(record)
 
     rows: list[dict[str, float | int | str]] = []
-    for method, method_records in sorted(by_method.items()):
+    for (method, memory_budget), method_records in sorted(by_method.items()):
         final_accuracy = [_metric(record, "average_final_accuracy") for record in method_records]
         learning_accuracy = [
             _metric(record, "average_learning_accuracy") for record in method_records
@@ -117,6 +118,9 @@ def aggregate_records(records: Sequence[RunRecord]) -> list[dict[str, float | in
         backward_transfer = [_metric(record, "backward_transfer") for record in method_records]
         runtimes = [record.runtime_seconds for record in method_records]
         memory_budgets = [_metric(record, "replay_buffer_size") for record in method_records]
+        models = ",".join(
+            sorted({str(record.summary.get("model", "")) for record in method_records})
+        )
         seeds = ",".join(
             str(record.seed) for record in sorted(method_records, key=lambda item: item.seed)
         )
@@ -126,6 +130,8 @@ def aggregate_records(records: Sequence[RunRecord]) -> list[dict[str, float | in
                 "method": method,
                 "runs": len(method_records),
                 "seeds": seeds,
+                "protocol_key": f"{method}@memory{memory_budget}",
+                "models": models,
                 "average_final_accuracy_mean": _mean(final_accuracy),
                 "average_final_accuracy_std": _std(final_accuracy),
                 "average_learning_accuracy_mean": _mean(learning_accuracy),
@@ -145,6 +151,7 @@ def write_report(
     output_dir: str | Path,
     title: str,
     make_plots: bool = True,
+    paper: bool = False,
 ) -> ReportArtifacts:
     """Write CSV, JSON, Markdown, and optional plot artifacts for a benchmark suite."""
 
@@ -159,7 +166,11 @@ def write_report(
     plots: list[Path] = []
     if make_plots:
         plots = _write_plots(records, leaderboard, report_dir, title)
+        if paper:
+            plots.extend(_write_paper_plots(records, leaderboard, report_dir))
     markdown = _write_markdown(report_dir / "README.md", title, records, leaderboard, plots)
+    if paper:
+        _write_paper_tables(report_dir, records, leaderboard)
     return ReportArtifacts(
         report_dir=report_dir,
         leaderboard_csv=leaderboard_csv,
@@ -174,6 +185,8 @@ def _write_leaderboard_csv(path: Path, rows: Sequence[dict[str, float | int | st
         "method",
         "runs",
         "seeds",
+        "protocol_key",
+        "models",
         "average_final_accuracy_mean",
         "average_final_accuracy_std",
         "average_learning_accuracy_mean",
@@ -274,6 +287,15 @@ def _write_markdown(
 
     lines.extend(
         [
+            "## Protocol Notes",
+            "",
+            "Rows are aggregated by method and replay-memory budget. Compare rows with the same memory budget and model family for matched-protocol claims.",
+            "",
+        ]
+    )
+
+    lines.extend(
+        [
             "## Source Runs",
             "",
             "| Method | Seed | Run directory |",
@@ -305,6 +327,144 @@ def _write_plots(
     ]
     plt.close("all")
     return paths
+
+
+def _write_paper_plots(
+    records: Sequence[RunRecord],
+    leaderboard: Sequence[dict[str, float | int | str]],
+    report_dir: Path,
+) -> list[Path]:
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    paths = [
+        _plot_memory_accuracy_pareto(
+            plt,
+            leaderboard,
+            report_dir / "memory_accuracy_pareto.png",
+        ),
+        _plot_memory_forgetting_pareto(
+            plt,
+            leaderboard,
+            report_dir / "memory_forgetting_pareto.png",
+        ),
+        _plot_runtime_memory_tradeoff(
+            plt,
+            leaderboard,
+            report_dir / "runtime_memory_accuracy.png",
+        ),
+    ]
+    if any("car_calibration_temperature" in record.summary for record in records):
+        paths.append(_plot_calibration(plt, records, report_dir / "calibration_temperatures.png"))
+    plt.close("all")
+    return paths
+
+
+def _write_paper_tables(
+    report_dir: Path,
+    records: Sequence[RunRecord],
+    leaderboard: Sequence[dict[str, float | int | str]],
+) -> None:
+    per_seed_path = report_dir / "per_seed_results.csv"
+    with per_seed_path.open("w", encoding="utf-8", newline="") as handle:
+        fieldnames = [
+            "benchmark",
+            "method",
+            "seed",
+            "memory",
+            "model",
+            "average_final_accuracy",
+            "average_forgetting",
+            "backward_transfer",
+            "runtime_seconds",
+            "git_commit",
+        ]
+        writer = csv.DictWriter(handle, fieldnames=fieldnames)
+        writer.writeheader()
+        for record in records:
+            writer.writerow(
+                {
+                    "benchmark": record.benchmark,
+                    "method": record.method,
+                    "seed": record.seed,
+                    "memory": _metric(record, "replay_buffer_size"),
+                    "model": record.summary.get("model", ""),
+                    "average_final_accuracy": _metric(record, "average_final_accuracy"),
+                    "average_forgetting": _metric(record, "average_forgetting"),
+                    "backward_transfer": _metric(record, "backward_transfer"),
+                    "runtime_seconds": record.runtime_seconds,
+                    "git_commit": record.git_commit,
+                }
+            )
+
+    latex_lines = [
+        r"\begin{tabular}{lrrrr}",
+        r"\toprule",
+        r"Method & Memory & Final Acc. & Forgetting & Runtime (s) \\",
+        r"\midrule",
+    ]
+    for row in leaderboard:
+        latex_lines.append(
+            "{method} & {memory:.0f} & {acc:.2f} $\\pm$ {acc_std:.2f} & {forget:.2f} $\\pm$ {forget_std:.2f} & {runtime:.1f} \\\\".format(
+                method=row["method"],
+                memory=float(row["memory_budget_mean"]),
+                acc=float(row["average_final_accuracy_mean"]),
+                acc_std=float(row["average_final_accuracy_std"]),
+                forget=float(row["average_forgetting_mean"]),
+                forget_std=float(row["average_forgetting_std"]),
+                runtime=float(row["runtime_seconds_mean"]),
+            )
+        )
+    latex_lines.extend([r"\bottomrule", r"\end{tabular}", ""])
+    (report_dir / "leaderboard_table.tex").write_text("\n".join(latex_lines), encoding="utf-8")
+
+    claims_lines = [
+        "# Claims Table",
+        "",
+        "| Claim | Evidence status | Notes |",
+        "| --- | --- | --- |",
+        "| CAR improves the memory-accuracy Pareto frontier | Pending matched full-data runs | Requires equal memory, model, epochs, and seeds. |",
+        "| High-memory methods outperform naive fine-tuning | Supported if leaderboard contains matched runs | Must not mix budgets in the same claim. |",
+        "| Results reproduce external libraries | Pending external protocol match | Compare against Mammoth, Avalanche, and ContinualAI only with protocol caveats. |",
+    ]
+    (report_dir / "claims_table.md").write_text("\n".join(claims_lines) + "\n", encoding="utf-8")
+
+
+def write_export(
+    records: Sequence[RunRecord],
+    output_dir: str | Path,
+    export_format: str,
+) -> list[Path]:
+    output = Path(output_dir)
+    output.mkdir(parents=True, exist_ok=True)
+    rows = [
+        {
+            "benchmark": record.benchmark,
+            "method": record.method,
+            "seed": record.seed,
+            "memory": _metric(record, "replay_buffer_size"),
+            "model": record.summary.get("model", ""),
+            "average_final_accuracy": _metric(record, "average_final_accuracy"),
+            "average_forgetting": _metric(record, "average_forgetting"),
+            "runtime_seconds": record.runtime_seconds,
+            "run_dir": str(record.run_dir),
+            "git_commit": record.git_commit,
+        }
+        for record in records
+    ]
+    prefix = export_format.lower()
+    csv_path = output / f"{prefix}_runs.csv"
+    json_path = output / f"{prefix}_runs.json"
+    with csv_path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=list(rows[0].keys()) if rows else [])
+        writer.writeheader()
+        writer.writerows(rows)
+    with json_path.open("w", encoding="utf-8") as handle:
+        json.dump({"format": export_format, "runs": rows}, handle, indent=2, sort_keys=True)
+        handle.write("\n")
+    return [csv_path, json_path]
 
 
 def _plot_leaderboard(
@@ -441,6 +601,120 @@ def _plot_accuracy_matrices(plt: Any, records: Sequence[RunRecord], path: Path) 
     return path
 
 
+def _plot_memory_accuracy_pareto(
+    plt: Any,
+    leaderboard: Sequence[dict[str, float | int | str]],
+    path: Path,
+) -> Path:
+    fig, axis = plt.subplots(figsize=(8.5, 5.5), constrained_layout=True)
+    for row in leaderboard:
+        method = str(row["method"])
+        axis.scatter(
+            float(row["memory_budget_mean"]),
+            float(row["average_final_accuracy_mean"]),
+            s=95,
+            color=_method_color(method),
+            edgecolor="#111827",
+            linewidth=0.8,
+        )
+        axis.text(
+            float(row["memory_budget_mean"]),
+            float(row["average_final_accuracy_mean"]) + 0.8,
+            method,
+            ha="center",
+            fontsize=8,
+        )
+    axis.set_title("Memory-accuracy Pareto view", fontsize=13, fontweight="bold")
+    axis.set_xlabel("Replay memory budget")
+    axis.set_ylabel("Average final accuracy (%)")
+    axis.grid(alpha=0.25)
+    fig.savefig(path, dpi=180, bbox_inches="tight")
+    return path
+
+
+def _plot_memory_forgetting_pareto(
+    plt: Any,
+    leaderboard: Sequence[dict[str, float | int | str]],
+    path: Path,
+) -> Path:
+    fig, axis = plt.subplots(figsize=(8.5, 5.5), constrained_layout=True)
+    for row in leaderboard:
+        method = str(row["method"])
+        axis.scatter(
+            float(row["memory_budget_mean"]),
+            float(row["average_forgetting_mean"]),
+            s=95,
+            color=_method_color(method),
+            edgecolor="#111827",
+            linewidth=0.8,
+        )
+        axis.text(
+            float(row["memory_budget_mean"]),
+            float(row["average_forgetting_mean"]) + 0.8,
+            method,
+            ha="center",
+            fontsize=8,
+        )
+    axis.set_title("Memory-forgetting Pareto view", fontsize=13, fontweight="bold")
+    axis.set_xlabel("Replay memory budget")
+    axis.set_ylabel("Average forgetting (%)")
+    axis.grid(alpha=0.25)
+    fig.savefig(path, dpi=180, bbox_inches="tight")
+    return path
+
+
+def _plot_runtime_memory_tradeoff(
+    plt: Any,
+    leaderboard: Sequence[dict[str, float | int | str]],
+    path: Path,
+) -> Path:
+    fig, axis = plt.subplots(figsize=(8.5, 5.5), constrained_layout=True)
+    runtimes = [float(row["runtime_seconds_mean"]) for row in leaderboard]
+    max_runtime = max(runtimes, default=1.0)
+    for row in leaderboard:
+        method = str(row["method"])
+        axis.scatter(
+            float(row["memory_budget_mean"]),
+            float(row["average_final_accuracy_mean"]),
+            s=60 + 240 * float(row["runtime_seconds_mean"]) / max_runtime,
+            color=_method_color(method),
+            alpha=0.82,
+            edgecolor="#111827",
+            linewidth=0.8,
+        )
+        axis.text(
+            float(row["memory_budget_mean"]),
+            float(row["average_final_accuracy_mean"]) + 0.8,
+            method,
+            ha="center",
+            fontsize=8,
+        )
+    axis.set_title("Runtime, memory, and accuracy tradeoff", fontsize=13, fontweight="bold")
+    axis.set_xlabel("Replay memory budget")
+    axis.set_ylabel("Average final accuracy (%)")
+    axis.grid(alpha=0.25)
+    fig.savefig(path, dpi=180, bbox_inches="tight")
+    return path
+
+
+def _plot_calibration(plt: Any, records: Sequence[RunRecord], path: Path) -> Path:
+    fig, axis = plt.subplots(figsize=(8.5, 5.0), constrained_layout=True)
+    car_records = [record for record in records if "car_calibration_temperature" in record.summary]
+    labels = [f"{record.method}-{record.seed}" for record in car_records]
+    values = [
+        float(record.summary.get("car_calibration_temperature", 1.0)) for record in car_records
+    ]
+    axis.bar(
+        range(len(values)), values, color=[_method_color(record.method) for record in car_records]
+    )
+    axis.set_title("Post-task calibration temperatures", fontsize=13, fontweight="bold")
+    axis.set_ylabel("Temperature")
+    axis.set_xticks(range(len(values)), labels, rotation=35, ha="right")
+    axis.grid(axis="y", alpha=0.25)
+    fig.savefig(path, dpi=180, bbox_inches="tight")
+    return path
+
+
 def _records_by_method(records: Sequence[RunRecord]) -> dict[str, list[RunRecord]]:
     by_method: dict[str, list[RunRecord]] = defaultdict(list)
     for record in sorted(records, key=lambda item: (item.method, item.seed)):
@@ -485,6 +759,10 @@ def _method_color(method: str) -> str:
         "agem": "#0f766e",
         "er_ace": "#0891b2",
         "gdumb": "#db2777",
+        "car": "#dc2626",
+        "bic": "#9333ea",
+        "icarl": "#ca8a04",
+        "x_der_lite": "#4f46e5",
     }.get(method, "#7c3aed")
 
 

@@ -17,7 +17,10 @@ and plots. The primary reported result is a verified Split CIFAR-10 suite.
 
 - Config-driven benchmark runner for single runs and multi-method suites.
 - Implemented baseline fine-tuning, EWC, reservoir replay, LwF, DER++, A-GEM,
-  ER-ACE, and GDumb.
+  ER-ACE, GDumb, and experimental Calibrated Anchor Replay.
+- Includes CAR-component ablations exposed as `bic`, `icarl`, and `x_der_lite`;
+  these are lightweight protocol baselines, not exact reproductions of the
+  original papers.
 - Deterministic synthetic CI benchmark plus real MNIST and CIFAR-10 task streams.
 - Artifact tracking for config snapshots, metadata, JSONL events, CSV matrices,
   checkpoints, MLflow runs, aggregate reports, and plots.
@@ -81,6 +84,31 @@ cl-bench suite \
   strategy.gdumb_epochs=20
 ```
 
+Run a matched-memory paper suite:
+
+```bash
+cl-bench suite \
+  --config-name paper/split_cifar10_full \
+  --methods replay derpp er_ace gdumb car bic icarl x_der_lite \
+  --seeds 13 21 34 55 89 \
+  --memory-budgets 200 500 1000 2000 5000 \
+  --tracking both \
+  --paper \
+  --report-dir docs/paper/assets/split_cifar10_full \
+  --title "Split CIFAR-10 Full-Data Paper Protocol"
+```
+
+Run a focused CAR hyperparameter sweep:
+
+```bash
+cl-bench sweep \
+  --config-name paper/split_cifar10_full \
+  --method car \
+  --study-name car_split_cifar10 \
+  --n-trials 50 \
+  --tracking both
+```
+
 Use Hydra/OmegaConf-style overrides for quick experiments:
 
 ```bash
@@ -105,6 +133,14 @@ cl-bench report \
   --runs runs \
   --output-dir reports/local \
   --title "Local continual-learning report"
+```
+
+Generate paper-oriented reports and comparison exports:
+
+```bash
+cl-bench report --runs runs --output-dir docs/paper/assets/local --title "Paper report" --paper
+cl-bench export --runs runs --output-dir docs/paper/exports --format mammoth
+cl-bench export --runs runs --output-dir docs/paper/exports --format avalanche
 ```
 
 ## Verified Headline Benchmark
@@ -152,14 +188,18 @@ src/cl_bench/
   models.py          # linear, MLP, small CNN, and CIFAR residual ConvNet factory
   reporting.py       # run aggregation, leaderboard CSV/JSON, and plots
   tracking.py        # JSON/JSONL/CSV artifacts and optional MLflow logging
-  strategies/        # baseline, EWC, replay, LwF, DER++, A-GEM, ER-ACE, GDumb
+  strategies/        # baseline, EWC, replay, LwF, DER++, A-GEM, ER-ACE, GDumb, CAR
 configs/
   smoke.yaml              # fast deterministic CPU benchmark
   split_mnist_quick.yaml  # bounded real MNIST suite for local CPU runs
   split_mnist.yaml        # full five-task MNIST stream
   split_cifar10_headline.yaml # verified CIFAR-10 benchmark used in the README
+  paper/                  # full-data CIFAR-10, CIFAR-100, and TinyImageNet protocols
+  method/                 # method snippets such as CAR defaults
+  model/                  # model/training snippets such as CIFAR ResNet-18
 docs/
   BENCHMARK_CARD.md       # scope, metrics, limitations, reproducibility
+  paper/                  # manuscript scaffold, claims table, and run checklist
 tests/                    # unit and integration coverage
 ```
 
@@ -202,6 +242,9 @@ ignored by git. Curated README assets under `docs/assets/` are intentionally kep
   old classes, while replay examples still use full cross-entropy.
 - GDumb keeps a class-balanced memory and retrains from scratch on stored
   exemplars after each task.
+- CAR keeps class-balanced exemplars with logit and feature anchors, refreshes
+  per-class prototypes after each task, and fits a lightweight temperature/bias
+  calibrator over memory before evaluation.
 - Best validation checkpoints are deep-copied before restoration to avoid mutable
   `state_dict` aliasing bugs.
 - The suite/report layer separates expensive benchmark execution from cheap,

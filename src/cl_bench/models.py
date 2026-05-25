@@ -111,6 +111,46 @@ class CifarConvNet(nn.Module):
         return self.classifier(torch.flatten(features, 1))
 
 
+class CifarResNet18(nn.Module):
+    """ResNet-18 variant with a CIFAR stem and no initial max-pool."""
+
+    def __init__(self, input_shape: tuple[int, ...], num_classes: int):
+        super().__init__()
+        if len(input_shape) != 3:
+            raise ValueError(f"CifarResNet18 expects CHW input, got {input_shape}.")
+        channels, _, _ = input_shape
+        self.in_channels = 64
+        self.stem = nn.Sequential(
+            nn.Conv2d(channels, 64, kernel_size=3, stride=1, padding=1, bias=False),
+            _norm(64),
+            nn.ReLU(inplace=True),
+        )
+        self.layer1 = self._make_layer(64, blocks=2, stride=1)
+        self.layer2 = self._make_layer(128, blocks=2, stride=2)
+        self.layer3 = self._make_layer(256, blocks=2, stride=2)
+        self.layer4 = self._make_layer(512, blocks=2, stride=2)
+        self.pool = nn.AdaptiveAvgPool2d((1, 1))
+        self.features = nn.Sequential(
+            self.stem,
+            self.layer1,
+            self.layer2,
+            self.layer3,
+            self.layer4,
+            self.pool,
+        )
+        self.classifier = nn.Linear(512, num_classes)
+
+    def _make_layer(self, out_channels: int, blocks: int, stride: int) -> nn.Sequential:
+        layers = [ResidualBlock(self.in_channels, out_channels, stride=stride)]
+        self.in_channels = out_channels
+        layers.extend(ResidualBlock(out_channels, out_channels) for _ in range(blocks - 1))
+        return nn.Sequential(*layers)
+
+    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+        features = torch.flatten(self.features(inputs), 1)
+        return self.classifier(features)
+
+
 def get_model(model_name: str, input_shape: tuple[int, ...], num_classes: int) -> nn.Module:
     name = model_name.lower().replace("-", "_")
     if name == "linear":
@@ -119,8 +159,10 @@ def get_model(model_name: str, input_shape: tuple[int, ...], num_classes: int) -
         return MLP(input_shape, num_classes)
     if name in {"small_cnn", "cnn"}:
         return SmallCNN(input_shape, num_classes)
-    if name in {"cifar_convnet", "resnet18_cifar"}:
+    if name == "cifar_convnet":
         return CifarConvNet(input_shape, num_classes)
+    if name in {"resnet18_cifar", "cifar_resnet18"}:
+        return CifarResNet18(input_shape, num_classes)
     raise ValueError(f"Unknown model architecture: {model_name}")
 
 

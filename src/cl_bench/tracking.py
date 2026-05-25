@@ -41,7 +41,14 @@ def create_run_dir(output_dir: str | Path, benchmark_name: str, method: str) -> 
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     safe_name = _safe_slug(benchmark_name)
     safe_method = _safe_slug(method)
-    return Path(output_dir) / f"{safe_name}_{safe_method}_{timestamp}"
+    base = Path(output_dir) / f"{safe_name}_{safe_method}_{timestamp}"
+    if not base.exists():
+        return base
+    for suffix in range(1, 10_000):
+        candidate = Path(f"{base}_{suffix:03d}")
+        if not candidate.exists():
+            return candidate
+    raise RuntimeError(f"Could not allocate a unique run directory for {base}.")
 
 
 def git_commit(repo_dir: str | Path | None = None) -> str | None:

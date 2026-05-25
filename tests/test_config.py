@@ -50,6 +50,20 @@ def test_load_cifar_headline_config_and_overrides() -> None:
     assert overridden.tracking == "json"
 
 
+def test_load_nested_paper_configs() -> None:
+    config = load_config("paper/split_cifar10_full")
+
+    assert config.name == "split_cifar10_full"
+    assert config.method == "car"
+    assert config.model == "resnet18_cifar"
+    assert config.optimizer == "sgd"
+    assert config.scheduler == "cosine"
+    assert config.label_smoothing == 0.05
+    assert config.car_logit_anchor_weight == 0.25
+    assert len(config.tasks) == 5
+    assert all(task.train_limit is None for task in config.tasks)
+
+
 def test_nested_training_and_strategy_values_are_parsed() -> None:
     config = ExperimentConfig.from_dict(
         {

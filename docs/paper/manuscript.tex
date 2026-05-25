@@ -1,0 +1,51 @@
+\documentclass{article}
+
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{hyperref}
+
+\title{Calibrated Anchor Replay: Reducing Recency Bias and Representation Drift in Class-Incremental Learning}
+\author{Utkarsh Rajput}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Class-incremental continual learning requires models to acquire new classes
+without overwriting earlier decision boundaries. We study whether replay methods
+can be strengthened with lightweight logit anchors, feature anchors, class
+prototypes, and post-task calibration while preserving fixed memory budgets. The
+central claim is evaluated through memory-accuracy Pareto curves under matched
+Split CIFAR-10, Split CIFAR-100, and TinyImageNet protocols.
+\end{abstract}
+
+\section{Introduction}
+State the plasticity-stability problem, why replay remains a strong baseline,
+and why matched memory budgets are necessary for fair claims.
+
+\section{Method}
+Define Calibrated Anchor Replay. The method stores exemplars, labels, teacher
+logits, penultimate features, and prototype statistics. Training combines current
+cross-entropy, replay cross-entropy, logit matching, feature anchoring, and
+prototype anchoring. After each task, a temperature and bias calibration head is
+fit over balanced memory.
+
+\section{Experimental Protocol}
+Report full-data Split CIFAR-10, Split CIFAR-100, and TinyImageNet. Compare
+baseline, replay, DER++, ER-ACE, A-GEM, GDumb, iCaRL-style replay, BiC-style
+calibration, X-DER-lite, and CAR under matched memory budgets.
+
+\section{Results}
+Insert generated tables and figures from \texttt{docs/paper/assets}. Claims must
+be restricted to matched protocols.
+
+\section{Ablations}
+Remove balanced memory, logit anchors, feature anchors, prototype anchors, and
+calibration one at a time.
+
+\section{Limitations}
+Discuss compute budget, dataset scope, external protocol differences, and any
+cases where CAR fails to beat strong baselines.
+
+\end{document}

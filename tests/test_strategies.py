@@ -8,6 +8,7 @@ from cl_bench.models import get_model
 from cl_bench.strategies.agem import AGEMStrategy
 from cl_bench.strategies.base import clone_state_dict
 from cl_bench.strategies.baseline import BaselineStrategy
+from cl_bench.strategies.car import CARStrategy, CARWeights, _augment_replay_batch
 from cl_bench.strategies.derpp import DERPPStrategy
 from cl_bench.strategies.er_ace import ERACEStrategy
 from cl_bench.strategies.ewc import EWCStrategy
@@ -205,3 +206,90 @@ def test_gdumb_collects_balanced_memory_and_trains_after_task() -> None:
 
     assert len(strategy.buffer) > 0
     assert 0.0 <= metrics["accuracy"] <= 100.0
+
+
+def test_car_stores_anchors_and_uses_all_loss_components() -> None:
+    config = _tiny_config()
+    tasks, input_shape, num_classes = build_task_loaders(config)
+    model = get_model("linear", input_shape, num_classes)
+    strategy = CARStrategy(
+        model,
+        torch.device("cpu"),
+        learning_rate=0.05,
+        buffer_size=16,
+        replay_batch_size=4,
+        task_classes=[[0, 1]],
+        num_classes=num_classes,
+        weights=CARWeights(
+            logit_anchor=0.25,
+            replay_ce=1.0,
+            feature_anchor=0.1,
+            prototype_anchor=0.1,
+        ),
+        calibration_epochs=1,
+        calibration_lr=0.01,
+        calibration_weight_decay=0.0,
+        replay_augment=False,
+        use_current_task_mask=True,
+        seed=1,
+    )
+    inputs, targets = next(iter(tasks[0].train_loader))
+    logits = strategy.model(inputs)
+    strategy.observe_batch(inputs, targets, logits, task_id=0)
+    strategy._refresh_buffer_anchors()
+
+    loss, _, components = strategy.compute_loss(inputs, targets, task_id=0)
+
+    assert loss.item() > 0.0
+    assert len(strategy.buffer) == inputs.size(0)
+    assert all(sample.logits is not None for sample in strategy.buffer.samples)
+    assert all(sample.features is not None for sample in strategy.buffer.samples)
+    assert "car_replay_ce_loss" in components
+    assert "car_logit_anchor_loss" in components
+    assert "car_feature_anchor_loss" in components
+    assert "car_prototype_anchor_loss" in components
+
+
+def test_car_calibration_updates_logits_without_backbone_change() -> None:
+    config = _tiny_config()
+    tasks, input_shape, num_classes = build_task_loaders(config)
+    model = get_model("linear", input_shape, num_classes)
+    strategy = CARStrategy(
+        model,
+        torch.device("cpu"),
+        learning_rate=0.05,
+        buffer_size=16,
+        replay_batch_size=4,
+        task_classes=[[0, 1]],
+        num_classes=num_classes,
+        weights=CARWeights(0.0, 1.0, 0.0, 0.0),
+        calibration_epochs=3,
+        calibration_lr=0.1,
+        calibration_weight_decay=0.0,
+        replay_augment=False,
+        use_current_task_mask=True,
+        seed=1,
+    )
+    inputs, targets = next(iter(tasks[0].train_loader))
+    with torch.no_grad():
+        before_model = clone_state_dict(strategy.model)
+        before_logits = strategy.calibrator(strategy.model(inputs)).detach().clone()
+    strategy.observe_batch(inputs, targets, strategy.model(inputs), task_id=0)
+    strategy._refresh_buffer_anchors()
+    strategy._fit_calibration()
+    with torch.no_grad():
+        after_logits = strategy.calibrator(strategy.model(inputs)).detach()
+
+    for name, tensor in before_model.items():
+        assert torch.equal(tensor, strategy.model.state_dict()[name])
+    assert not torch.equal(before_logits, after_logits)
+
+
+def test_replay_augmentation_does_not_mutate_stored_exemplars() -> None:
+    stored = torch.randn(4, 3, 32, 32)
+    original = stored.clone()
+
+    augmented = _augment_replay_batch(stored)
+
+    assert torch.equal(stored, original)
+    assert augmented.shape == stored.shape

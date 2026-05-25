@@ -16,6 +16,11 @@ tasks after every training step.
 - A-GEM with replay-memory gradient projection.
 - ER-ACE with asymmetric current-task cross-entropy plus replay.
 - GDumb with class-balanced memory and from-scratch memory training.
+- Calibrated Anchor Replay with balanced exemplars, logit anchors, feature
+  anchors, per-class prototypes, and a post-task calibration head.
+- `bic`, `icarl`, and `x_der_lite` are lightweight protocol baselines built from
+  the CAR components for ablation and comparison; they are not drop-in
+  reproductions of the original papers.
 
 ## Datasets
 
@@ -25,6 +30,10 @@ tasks after every training step.
 - `split_mnist`: full five-task MNIST stream for longer local experiments.
 - `split_cifar10_headline`: real CIFAR-10 images, five class-incremental tasks,
   two verification seeds, and a compact residual ConvNet.
+- `paper/split_cifar10_full`: full Split CIFAR-10 protocol for paper runs.
+- `paper/split_cifar100_full`: full Split CIFAR-100 protocol for paper runs.
+- `paper/split_tinyimagenet`: Split TinyImageNet protocol; requires the dataset
+  to be downloaded into the configured `data_dir`.
 
 ## Metrics
 
@@ -47,3 +56,5 @@ engineering verification. It is not a leaderboard claim. Serious research
 comparisons should increase seeds, epochs, memory budgets, and dataset coverage.
 The GDumb comparison uses a larger memory budget than the main 5,000-example
 suite and should be read as a high-memory result rather than a same-budget claim.
+Paper claims must be made only from matched memory budgets, matched model
+families, full protocol configs, and multi-seed confidence intervals.

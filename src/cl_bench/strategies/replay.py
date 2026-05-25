@@ -16,6 +16,7 @@ class ReplaySample:
     inputs: torch.Tensor
     target: int
     logits: torch.Tensor | None = None
+    features: torch.Tensor | None = None
 
 
 class ReservoirReplayBuffer:
@@ -37,15 +38,24 @@ class ReservoirReplayBuffer:
         inputs: torch.Tensor,
         targets: torch.Tensor,
         logits: torch.Tensor | None = None,
+        features: torch.Tensor | None = None,
     ) -> None:
         logits_cpu = None if logits is None else logits.detach().cpu()
+        features_cpu = None if features is None else features.detach().cpu()
         for index, (input_tensor, target) in enumerate(
             zip(inputs.detach().cpu(), targets.detach().cpu(), strict=True)
         ):
             sample_logits = None if logits_cpu is None else logits_cpu[index]
-            self.add(input_tensor, int(target.item()), sample_logits)
+            sample_features = None if features_cpu is None else features_cpu[index]
+            self.add(input_tensor, int(target.item()), sample_logits, sample_features)
 
-    def add(self, inputs: torch.Tensor, target: int, logits: torch.Tensor | None = None) -> None:
+    def add(
+        self,
+        inputs: torch.Tensor,
+        target: int,
+        logits: torch.Tensor | None = None,
+        features: torch.Tensor | None = None,
+    ) -> None:
         self.seen_count += 1
         if self.capacity == 0:
             return
@@ -53,6 +63,7 @@ class ReservoirReplayBuffer:
             inputs=inputs.detach().cpu().clone(),
             target=int(target),
             logits=None if logits is None else logits.detach().cpu().clone(),
+            features=None if features is None else features.detach().cpu().clone(),
         )
         if len(self.samples) < self.capacity:
             self.samples.append(sample)
@@ -67,20 +78,39 @@ class ReservoirReplayBuffer:
         return inputs, targets
 
     def sample_tensors(
-        self, batch_size: int, require_logits: bool = False
+        self,
+        batch_size: int,
+        require_logits: bool = False,
+        require_features: bool = False,
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor | None]:
-        chosen = self.sample_samples(batch_size, require_logits=require_logits)
+        chosen = self.sample_samples(
+            batch_size,
+            require_logits=require_logits,
+            require_features=require_features,
+        )
         inputs = torch.stack([sample.inputs for sample in chosen])
         targets = torch.tensor([sample.target for sample in chosen], dtype=torch.long)
         if require_logits:
             logits = torch.stack([sample.logits for sample in chosen if sample.logits is not None])
+        elif require_features:
+            logits = torch.stack(
+                [sample.features for sample in chosen if sample.features is not None]
+            )
         else:
             logits = None
         return inputs, targets, logits
 
-    def sample_samples(self, batch_size: int, require_logits: bool = False) -> list[ReplaySample]:
+    def sample_samples(
+        self,
+        batch_size: int,
+        require_logits: bool = False,
+        require_features: bool = False,
+    ) -> list[ReplaySample]:
         candidates = [
-            sample for sample in self.samples if not require_logits or sample.logits is not None
+            sample
+            for sample in self.samples
+            if (not require_logits or sample.logits is not None)
+            and (not require_features or sample.features is not None)
         ]
         if not candidates:
             raise ValueError("Cannot sample from an empty replay buffer.")
@@ -106,15 +136,24 @@ class BalancedReplayBuffer:
         inputs: torch.Tensor,
         targets: torch.Tensor,
         logits: torch.Tensor | None = None,
+        features: torch.Tensor | None = None,
     ) -> None:
         logits_cpu = None if logits is None else logits.detach().cpu()
+        features_cpu = None if features is None else features.detach().cpu()
         for index, (input_tensor, target) in enumerate(
             zip(inputs.detach().cpu(), targets.detach().cpu(), strict=True)
         ):
             sample_logits = None if logits_cpu is None else logits_cpu[index]
-            self.add(input_tensor, int(target.item()), sample_logits)
+            sample_features = None if features_cpu is None else features_cpu[index]
+            self.add(input_tensor, int(target.item()), sample_logits, sample_features)
 
-    def add(self, inputs: torch.Tensor, target: int, logits: torch.Tensor | None = None) -> None:
+    def add(
+        self,
+        inputs: torch.Tensor,
+        target: int,
+        logits: torch.Tensor | None = None,
+        features: torch.Tensor | None = None,
+    ) -> None:
         self.seen_count += 1
         if self.capacity == 0:
             return
@@ -123,6 +162,7 @@ class BalancedReplayBuffer:
             inputs=inputs.detach().cpu().clone(),
             target=int(target),
             logits=None if logits is None else logits.detach().cpu().clone(),
+            features=None if features is None else features.detach().cpu().clone(),
         )
         if len(self.samples) < self.capacity:
             self.samples.append(sample)
@@ -152,6 +192,22 @@ class BalancedReplayBuffer:
         inputs = torch.stack([sample.inputs for sample in self.samples])
         targets = torch.tensor([sample.target for sample in self.samples], dtype=torch.long)
         return inputs, targets
+
+    def sample_samples(
+        self,
+        batch_size: int,
+        require_logits: bool = False,
+        require_features: bool = False,
+    ) -> list[ReplaySample]:
+        candidates = [
+            sample
+            for sample in self.samples
+            if (not require_logits or sample.logits is not None)
+            and (not require_features or sample.features is not None)
+        ]
+        if not candidates:
+            raise ValueError("Cannot sample from an empty replay buffer.")
+        return self.rng.sample(candidates, k=min(batch_size, len(candidates)))
 
 
 class ReplayStrategy(ContinualLearningStrategy):

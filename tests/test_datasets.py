@@ -95,3 +95,42 @@ def test_cifar_task_construction_uses_rgb_shape_and_limits(monkeypatch) -> None:
     assert num_classes == 2
     assert len(tasks[0].train_loader.dataset) == 5
     assert len(tasks[0].test_loader.dataset) == 4
+
+
+def test_feature_cache_task_construction_is_deterministic(tmp_path) -> None:
+    train_cache = tmp_path / "train_features.pt"
+    test_cache = tmp_path / "test_features.pt"
+    payload = {
+        "features": torch.arange(24, dtype=torch.float32).reshape(6, 4),
+        "targets": torch.tensor([0, 0, 1, 1, 2, 2]),
+        "classes": [0, 1, 2],
+    }
+    torch.save(payload, train_cache)
+    torch.save(payload, test_cache)
+    config = ExperimentConfig(
+        name="feature_unit",
+        method="baseline",
+        seed=3,
+        model="linear",
+        data_dir=str(tmp_path),
+        batch_size=2,
+        eval_batch_size=4,
+        val_fraction=0.0,
+        tasks=[
+            TaskSpec(
+                name="features_0_1",
+                dataset="feature_cache",
+                classes=[0, 1],
+                train_feature_cache=train_cache.name,
+                test_feature_cache=test_cache.name,
+            )
+        ],
+    )
+
+    tasks, input_shape, num_classes = build_task_loaders(config)
+
+    assert input_shape == (4,)
+    assert num_classes == 2
+    assert len(tasks[0].train_loader.dataset) == 4
+    first_batch = next(iter(tasks[0].train_loader))
+    assert first_batch[0].shape[-1] == 4

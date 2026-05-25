@@ -24,6 +24,10 @@ Tasks per run: `5`
 
 ![accuracy_matrices](accuracy_matrices.png)
 
+## Protocol Notes
+
+Rows are aggregated by method and replay-memory budget. Compare rows with the same memory budget and model family for matched-protocol claims.
+
 ## Source Runs
 
 | Method | Seed | Run directory |

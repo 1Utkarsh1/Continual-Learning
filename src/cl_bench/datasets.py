@@ -54,6 +54,29 @@ class SyntheticImageDataset(Dataset):
         return self.data[index], self.targets[index]
 
 
+class FeatureCacheDataset(Dataset):
+    """Dataset backed by a cached tensor feature file."""
+
+    def __init__(self, cache_path: str | Path):
+        payload = torch.load(cache_path, map_location="cpu")
+        if not isinstance(payload, dict) or "features" not in payload or "targets" not in payload:
+            raise ValueError(
+                "Feature cache must be a torch-saved mapping with 'features' and 'targets'."
+            )
+        self.data = torch.as_tensor(payload["features"]).float()
+        self.targets = torch.as_tensor(payload["targets"]).long().tolist()
+        if self.data.size(0) != len(self.targets):
+            raise ValueError("Feature cache features and targets have different lengths.")
+        classes = payload.get("classes")
+        self.classes = list(classes) if classes is not None else sorted(set(self.targets))
+
+    def __len__(self) -> int:
+        return len(self.targets)
+
+    def __getitem__(self, index: int) -> tuple[torch.Tensor, int]:
+        return self.data[index], int(self.targets[index])
+
+
 def build_task_loaders(config: ExperimentConfig) -> tuple[list[TaskLoaders], tuple[int, ...], int]:
     task_loaders: list[TaskLoaders] = []
     all_classes: set[int] = set()
@@ -127,6 +150,20 @@ def _build_datasets(
         )
         return train_dataset, test_dataset, [int(label) for label in task.classes]
 
+    if dataset_name in {"feature_cache", "cached_features"}:
+        if task.train_feature_cache is None or task.test_feature_cache is None:
+            raise ValueError(
+                "Feature-cache tasks must define train_feature_cache and test_feature_cache."
+            )
+        train_dataset = FeatureCacheDataset(Path(config.data_dir) / task.train_feature_cache)
+        test_dataset = FeatureCacheDataset(Path(config.data_dir) / task.test_feature_cache)
+        classes = _resolve_classes(task, train_dataset)
+        return (
+            _class_subset(train_dataset, classes, task.train_limit, config.seed + task_id),
+            _class_subset(test_dataset, classes, task.test_limit, config.seed + task_id + 10_000),
+            classes,
+        )
+
     train_dataset = _torchvision_dataset(
         dataset_name,
         Path(config.data_dir),
@@ -157,26 +194,59 @@ def _torchvision_dataset(dataset_name: str, data_dir: Path, train: bool, augment
         return tv_datasets.KMNIST(data_dir, train=train, download=True, transform=transform)
     if dataset_name == "cifar10":
         return tv_datasets.CIFAR10(data_dir, train=train, download=True, transform=transform)
+    if dataset_name == "cifar100":
+        return tv_datasets.CIFAR100(data_dir, train=train, download=True, transform=transform)
+    if dataset_name == "tinyimagenet":
+        split = "train" if train else "val"
+        root = data_dir / "tiny-imagenet-200" / split
+        if not root.exists():
+            raise FileNotFoundError(
+                "TinyImageNet is not auto-downloaded. Expected ImageFolder layout at "
+                f"{root}. Download tiny-imagenet-200 under the configured data_dir."
+            )
+        return tv_datasets.ImageFolder(root, transform=transform)
     raise ValueError(f"Unsupported dataset: {dataset_name}")
 
 
 def _torchvision_transform(dataset_name: str, train: bool, augment: bool) -> transforms.Compose:
-    if dataset_name == "cifar10":
+    if dataset_name in {"cifar10", "cifar100", "tinyimagenet"}:
         steps: list[object] = []
         if train and augment:
-            steps.extend([transforms.RandomCrop(32, padding=4), transforms.RandomHorizontalFlip()])
-        steps.extend(
-            [
-                transforms.ToTensor(),
-                transforms.Normalize(
-                    mean=(0.4914, 0.4822, 0.4465),
-                    std=(0.2470, 0.2435, 0.2616),
-                ),
-            ]
-        )
+            size = 64 if dataset_name == "tinyimagenet" else 32
+            steps.extend(
+                [
+                    transforms.RandomCrop(size, padding=4),
+                    transforms.RandomHorizontalFlip(),
+                    transforms.RandAugment(num_ops=2, magnitude=9),
+                ]
+            )
+        mean = (0.485, 0.456, 0.406) if dataset_name == "tinyimagenet" else (0.4914, 0.4822, 0.4465)
+        std = (0.229, 0.224, 0.225) if dataset_name == "tinyimagenet" else (0.2470, 0.2435, 0.2616)
+        steps.extend([transforms.ToTensor(), transforms.Normalize(mean=mean, std=std)])
+        if train and augment:
+            steps.append(Cutout(size=8 if dataset_name != "tinyimagenet" else 16))
         return transforms.Compose(steps)
 
     return transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))])
+
+
+class Cutout:
+    """Randomly mask one square region in a tensor image."""
+
+    def __init__(self, size: int):
+        self.size = int(size)
+
+    def __call__(self, image: torch.Tensor) -> torch.Tensor:
+        if image.ndim != 3 or self.size <= 0:
+            return image
+        _, height, width = image.shape
+        cutout_height = min(self.size, height)
+        cutout_width = min(self.size, width)
+        top = int(torch.randint(0, height - cutout_height + 1, (1,)).item())
+        left = int(torch.randint(0, width - cutout_width + 1, (1,)).item())
+        image = image.clone()
+        image[:, top : top + cutout_height, left : left + cutout_width] = 0.0
+        return image
 
 
 def _resolve_classes(task: TaskSpec, dataset: Dataset) -> list[int]:

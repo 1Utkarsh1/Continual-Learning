@@ -1,0 +1,15 @@
+model: linear
+feature_protocol:
+  backbone: dinov2
+  cache_dir: data/feature_cache/dinov2
+  freeze_backbone: true
+  note: "Use cached frozen features for the modern-backbone protocol; extraction is run before cl-bench experiments."
+training:
+  optimizer: adamw
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  scheduler: cosine
+  warmup_epochs: 0
+  batch_size: 256
+  eval_batch_size: 1024
+  augment: false

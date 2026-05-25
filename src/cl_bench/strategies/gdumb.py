@@ -79,7 +79,7 @@ class GDumbStrategy(ContinualLearningStrategy):
         if len(self.buffer) == 0 or self.memory_epochs <= 0:
             return
         load_state_dict(self.model, self.initial_state, self.device)
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
+        self.optimizer = self._build_optimizer()
         inputs, targets = self.buffer.tensors()
         memory_dataset = TensorDataset(inputs, targets)
         memory_loader = DataLoader(

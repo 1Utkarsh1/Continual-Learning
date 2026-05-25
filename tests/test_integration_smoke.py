@@ -21,7 +21,7 @@ def test_cpu_smoke_benchmark_writes_reproducibility_artifacts(tmp_path) -> None:
 
 
 def test_synthetic_suite_runs_core_memory_methods(tmp_path) -> None:
-    for method in ["baseline", "replay", "derpp", "agem", "er_ace", "gdumb"]:
+    for method in ["baseline", "replay", "derpp", "agem", "er_ace", "gdumb", "car"]:
         config = replace(load_config("smoke"), output_dir=str(tmp_path), method=method)
         result = run_experiment(config)
 

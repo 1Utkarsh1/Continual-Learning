@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 
-from cl_bench.reporting import aggregate_records, collect_runs, write_report
+from cl_bench.reporting import aggregate_records, collect_runs, write_export, write_report
 
 
 def _write_metrics(run_dir, method: str, seed: int, final_accuracy: float) -> None:
@@ -18,6 +18,8 @@ def _write_metrics(run_dir, method: str, seed: int, final_accuracy: float) -> No
             "backward_transfer": -5.0,
             "runtime_seconds": 1.5,
             "seed": seed,
+            "replay_buffer_size": 500,
+            "model": "linear",
         },
         "accuracy_matrix": [[80.0, None], [70.0, final_accuracy]],
         "forgetting_matrix": [[0.0, None], [10.0, 0.0]],
@@ -64,3 +66,17 @@ def test_collect_runs_from_mlflow_artifact_export_shape(tmp_path) -> None:
     assert len(records) == 1
     assert records[0].method == "derpp"
     assert records[0].summary["average_final_accuracy"] == 88.0
+
+
+def test_write_paper_report_and_export_without_plots(tmp_path) -> None:
+    _write_metrics(tmp_path / "car_seed_1", "car", 1, 90.0)
+    records = collect_runs([tmp_path])
+
+    report = write_report(records, tmp_path / "paper", "Paper report", make_plots=False, paper=True)
+    exports = write_export(records, tmp_path / "export", "mammoth")
+
+    assert report.markdown.exists()
+    assert (tmp_path / "paper" / "leaderboard_table.tex").exists()
+    assert (tmp_path / "paper" / "per_seed_results.csv").exists()
+    assert (tmp_path / "paper" / "claims_table.md").exists()
+    assert all(path.exists() for path in exports)
