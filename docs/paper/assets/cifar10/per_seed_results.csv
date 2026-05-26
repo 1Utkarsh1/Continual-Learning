@@ -1,0 +1,2 @@
+benchmark,method,seed,memory,model,average_final_accuracy,average_forgetting,backward_transfer,forward_transfer,runtime_seconds,git_commit
+split_cifar10_full,joint,13,200.0,resnet18_cifar,79.28999999999999,7.950000000000003,-7.950000000000003,-13.175,13321.324294249993,094ff3e846326fd7b33ccfb65a683d5704c50ac0

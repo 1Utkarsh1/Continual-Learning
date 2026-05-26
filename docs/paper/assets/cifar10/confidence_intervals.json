@@ -1,0 +1,19 @@
+[
+  {
+    "average_final_accuracy_ci95": 0.0,
+    "average_final_accuracy_mean": 79.28999999999999,
+    "average_final_accuracy_std": 0.0,
+    "average_forgetting_mean": 7.950000000000003,
+    "average_forgetting_std": 0.0,
+    "average_learning_accuracy_mean": 85.65,
+    "backward_transfer_mean": -7.950000000000003,
+    "forward_transfer_mean": -13.175,
+    "memory_budget_mean": 200.0,
+    "method": "joint",
+    "models": "resnet18_cifar",
+    "protocol_key": "joint@memory200",
+    "runs": 1,
+    "runtime_seconds_mean": 13321.324294249993,
+    "seeds": "13"
+  }
+]

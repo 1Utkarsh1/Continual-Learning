@@ -1,0 +1,62 @@
+{
+  "benchmarks": [
+    "split_cifar10_full"
+  ],
+  "generated_at_utc": "2026-05-26T06:21:36.245725+00:00",
+  "leaderboard": [
+    {
+      "average_final_accuracy_mean": 79.28999999999999,
+      "average_final_accuracy_std": 0.0,
+      "average_forgetting_mean": 7.950000000000003,
+      "average_forgetting_std": 0.0,
+      "average_learning_accuracy_mean": 85.65,
+      "backward_transfer_mean": -7.950000000000003,
+      "forward_transfer_mean": -13.175,
+      "memory_budget_mean": 200.0,
+      "method": "joint",
+      "models": "resnet18_cifar",
+      "protocol_key": "joint@memory200",
+      "runs": 1,
+      "runtime_seconds_mean": 13321.324294249993,
+      "seeds": "13"
+    }
+  ],
+  "num_runs": 1,
+  "runs": [
+    {
+      "benchmark": "split_cifar10_full",
+      "git_commit": "094ff3e846326fd7b33ccfb65a683d5704c50ac0",
+      "method": "joint",
+      "run_dir": "runs/paper/split_cifar10_full_joint_20260526T023932Z",
+      "runtime_seconds": 13321.324294249993,
+      "seed": 13,
+      "summary": {
+        "average_final_accuracy": 79.28999999999999,
+        "average_forgetting": 7.950000000000003,
+        "average_learning_accuracy": 85.65,
+        "backward_transfer": -7.950000000000003,
+        "forward_transfer": -13.175,
+        "gdumb_epochs": 20,
+        "label_smoothing": 0.05,
+        "model": "resnet18_cifar",
+        "model_parameter_count": 11173962,
+        "num_tasks": 5,
+        "optimizer": "sgd",
+        "replay_batch_size": 128,
+        "replay_buffer_size": 200,
+        "runtime_seconds": 13321.324294249993,
+        "scheduler": "cosine",
+        "seed": 13,
+        "weight_decay": 0.0005
+      },
+      "task_names": [
+        "cifar10_airplane_automobile",
+        "cifar10_bird_cat",
+        "cifar10_deer_dog",
+        "cifar10_frog_horse",
+        "cifar10_ship_truck"
+      ]
+    }
+  ],
+  "title": "cifar10 full-data paper protocol"
+}

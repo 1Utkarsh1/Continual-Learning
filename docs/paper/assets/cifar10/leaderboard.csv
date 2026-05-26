@@ -1,0 +1,2 @@
+method,runs,seeds,protocol_key,models,average_final_accuracy_mean,average_final_accuracy_std,average_learning_accuracy_mean,average_forgetting_mean,average_forgetting_std,backward_transfer_mean,forward_transfer_mean,runtime_seconds_mean,memory_budget_mean
+joint,1,13,joint@memory200,resnet18_cifar,79.28999999999999,0.0,85.65,7.950000000000003,0.0,-7.950000000000003,-13.175,13321.324294249993,200.0
